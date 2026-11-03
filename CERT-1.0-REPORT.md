@@ -1,4 +1,4 @@
-# figround 1.0.0 preparation report
+# figround 1.0.0 certification report
 
 Date: 2026-11-03. Baseline: 0.2.1, main `9ab199be31037f1863621a5461d7a8ecfe149e37`.
 
@@ -14,7 +14,7 @@ Progress:
 - [x] Complete mutation round
 - [x] Final gates
 - [x] Open release PR #4; guard CLEAN
-- [ ] Independent review and five QA lenses
+- [x] Independent review and five QA lenses
 - [ ] Merge and publish
 
 ## API and behaviour
@@ -248,11 +248,23 @@ Evidence: `D:/pylib-scratch/sigfigs-cert/fix-r3/`, containing `red.log` and `ful
 
 None.
 
-## Remaining certification stages
+## Certification result
 
-Item 16 and the five lens confirmations under item 19 remain pending. Earlier
-improvement-round reviews do not certify 1.0.0. Item 17 merge and publication remain
-pending.
+| Lens | Rounds | Final verdict | Report | Commit |
+| --- | --- | --- | --- | --- |
+| a, API and docs | 2 | PASS | lens-a-r2/REPORT.md | 9073118 |
+| b, correctness and ground truth | 2 | PASS | lens-b-r2/REPORT.md | 9073118 |
+| c, adversarial and robustness | 4 | PASS | lens-c-r4/REPORT.md | d742d05 |
+| d, packaging and e2e | 2 | PASS | lens-d-r2/REPORT.md | 9073118 |
+| e, contract strength | 2 | PASS | lens-e-r2/REPORT.md | 9073118 |
+
+Independent reviewer, round 1 at d742d05: every item PASS except item 16, whose single
+finding (two evidence paths in this report named a build folder instead of describing it)
+was fixed in the report text. The re-check confirmed the fix and re-ran the four gates on
+a fresh clone. Reviewer evidence: decTest archive re-fetched (size, sha256, Last-Modified
+and ETag match the manifest), NIST SP 811 and JCGM 100:2008 examples found verbatim,
+the installed wheel suite on CPython 3.10, 3.11, 3.12, 3.13 and 3.14 (exit 0), two extra
+mutations of its own caught, `twine check --strict` passed, no prior PyPI release.
 
 ## Mutation round (item 18)
 
@@ -362,7 +374,7 @@ All 13 package source files stay below 200 lines.
 | 13 | PASS | Version 1.0.0, Production/Stable, Python classifiers, MIT, project URLs, no runtime dependencies |
 | 14 | PASS | Inspected sdist and wheel; package, type marker and license included; external archive excluded |
 | 15 | PASS | Four gates exit 0; round-2 fixed suite 309 passed |
-| 16 | PENDING | Independent release reviewer has not evaluated this version |
-| 17 | READY | PR #4 from `release/1.0.0` to `main`, guard CLEAN; merge and publication pending |
+| 16 | PASS | Independent reviewer round 1, item 16 finding fixed and re-checked |
+| 17 | PASS | PR #4 from `release/1.0.0` to `main`, guard CLEAN; merged by the orchestrator |
 | 18 | PASS | 24 preparation mutations caught; five round-1 survivors now caught by added contracts |
-| 19 | PENDING | All round-1 and round-2 findings addressed, awaiting independent confirmation |
+| 19 | PASS | Five lenses PASS (table under Certification result) |
