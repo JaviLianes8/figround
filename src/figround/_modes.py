@@ -6,6 +6,7 @@ import decimal
 from typing import Literal, cast, get_args
 
 from ._errors import InvalidOptionError
+from ._validation import check_str
 
 Rounding = Literal["half_even", "half_up", "half_down", "up", "down", "ceiling", "floor", "05up"]
 """Rounding mode names, the same eight algorithms as the ``decimal`` module.
@@ -47,21 +48,18 @@ _DECIMAL_MODES = {
 
 
 def decimal_mode(rounding: str) -> str:
-    """Map a public rounding name to the ``decimal`` constant, rejecting unknown names."""
-    if not isinstance(rounding, str):
-        raise TypeError("rounding must be a str")
+    """Map stored rounding text to the ``decimal`` constant, rejecting unknown names."""
+    rounding = check_str(rounding, "rounding")
     try:
         return _DECIMAL_MODES[rounding]
-    except (KeyError, TypeError):
+    except KeyError:
         choices = ", ".join(ROUNDING_MODES)
         raise InvalidOptionError(f"unknown rounding; use one of {choices}") from None
 
 
 def check_notation(notation: str) -> Notation:
     """Normalize stored notation text and reject names outside ``NOTATIONS``."""
-    if not isinstance(notation, str):
-        raise TypeError("notation must be a str")
-    notation = str.__str__(notation)
+    notation = check_str(notation, "notation")
     if notation not in NOTATIONS:
         choices = ", ".join(NOTATIONS)
         raise InvalidOptionError(f"unknown notation; use one of {choices}")

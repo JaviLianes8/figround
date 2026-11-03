@@ -15,6 +15,7 @@ from ._format import format_sig
 from ._modes import NOTATIONS, ROUNDING_MODES, Rounding
 from ._parser import Parser
 from ._uncertainty import STYLES, format_uncertainty
+from ._validation import is_kind
 
 
 def _add_rounding(parser: argparse.ArgumentParser, flag: str = "--rounding") -> None:
@@ -166,6 +167,9 @@ def _format(args: argparse.Namespace, parser: argparse.ArgumentParser) -> list[s
 
 def main(argv: Sequence[str] | None = None) -> int:
     """Run the command line; return the exit status (0 ok, 1 bad input, 2 bad usage)."""
+    if argv is not None:
+        # Hand argparse stored text, so str subclass hooks never run while parsing.
+        argv = [str.__str__(arg) if is_kind(arg, str) else arg for arg in argv]
     parser = _parser()
     args = parser.parse_args(argv)
     try:

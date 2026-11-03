@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import re
 from decimal import Decimal
+from typing import cast
 
 from ._errors import AmbiguousFiguresError, InvalidNumberError
-from ._validation import check_bool
+from ._validation import check_bool, is_kind
 
 _NUMBER = re.compile(r"[+-]?(?P<int>[0-9]*)(?:(?P<point>\.)(?P<frac>[0-9]*))?(?:[eE][+-]?[0-9]+)?")
 
@@ -37,18 +38,19 @@ def sig_bounds(text: str | Decimal) -> tuple[int, int]:
     whole number are ambiguous, so the bounds differ. An exponent never changes the count.
     A zero counts ``1`` plus its decimal places (``"0"`` is 1, ``"0.00"`` is 3), the
     convention ``format_sig`` writes. A ``Decimal`` is exact: every coefficient digit
-    counts, so ``Decimal("1200")`` is 4 and ``Decimal("1.2E+3")`` is 2.
+    counts, so ``Decimal("1200")`` is 4 and ``Decimal("1.2E+3")`` is 2. Subclasses are
+    read as their stored base value.
 
     Raises:
         TypeError: ``text`` is not a ``str`` or ``Decimal`` (an int or float cannot
             record trailing zeros).
         InvalidNumberError: ``text`` is not a plain finite decimal number.
     """
-    if isinstance(text, Decimal):
-        return _decimal_bounds(text)
-    if not isinstance(text, str):
+    if is_kind(text, Decimal):
+        return _decimal_bounds(Decimal(text))
+    if not is_kind(text, str):
         raise TypeError("expected str or Decimal")
-    match = _NUMBER.fullmatch(text.strip())
+    match = _NUMBER.fullmatch(str.strip(cast(str, text)))
     if match is None or not (match["int"] or match["frac"]):
         raise InvalidNumberError("not a number")
     whole, frac = match["int"], match["frac"] or ""

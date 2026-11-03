@@ -37,6 +37,12 @@ All notable changes to this project are documented here. The format follows
 - Normalize notation string subclasses to their stored text before validation,
   conflict checks and rendering in both formatting functions. Overridden comparisons
   and conversions no longer affect results or escape the documented error types.
+- Read subclasses of every accepted input and option type by their real type and
+  stored base value: numbers, figure counts, rounding, notation, style, `pm`, counted
+  text and CLI arguments. Overridden attribute access, comparisons, hashing, conversion
+  and formatting no longer run, change results or escape the documented error types.
+- Boolean options and numeric or text inputs are checked by their real type; objects
+  that only claim a type through `__class__` now raise `TypeError`.
 - Handle Windows closed-pipe errors during writes and flushes, preventing a second
   failing flush during shutdown. Other output errors still propagate.
 - Restore repository links, historical release names and runnable version metadata

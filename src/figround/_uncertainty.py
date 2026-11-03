@@ -9,6 +9,7 @@ from ._errors import InvalidOptionError, UncertaintyError
 from ._modes import Notation, Rounding, check_notation, decimal_mode
 from ._render import exponent_marker, fixed, power_for, shift
 from ._round import Number, check_figures, exact_context, out_of_range, round_value, to_decimal
+from ._validation import check_str
 
 Style = Literal["paren", "pm"]
 """Parenthesis or plus-minus uncertainty notation.
@@ -79,11 +80,11 @@ def round_uncertainty(
     return (rounded.copy_abs() if rounded.is_zero() else rounded), spread
 
 
-def _check_style(style: str) -> None:
-    if not isinstance(style, str):
-        raise TypeError("style must be a str")
+def _check_style(style: str) -> str:
+    style = check_str(style, "style")
     if style not in STYLES:
         raise InvalidOptionError(f"unknown style; use one of {', '.join(STYLES)}")
+    return style
 
 
 def _in_last_digits(value: Decimal, spread: Decimal) -> str:
@@ -124,11 +125,10 @@ def format_uncertainty(
 
     Raises the errors of ``round_uncertainty``, plus ``InvalidOptionError`` for an
     unknown ``style`` or ``notation``. Wrong option types raise ``TypeError``;
-    ``pm`` must be a string.
+    ``pm`` must be a string. String subclass options are read as their stored text.
     """
-    if not isinstance(pm, str):
-        raise TypeError("pm must be a str")
-    _check_style(style)
+    pm = check_str(pm, "pm")
+    chosen = _check_style(style)
     notation = check_notation(notation)
     number, spread = round_uncertainty(
         value,
@@ -141,7 +141,7 @@ def format_uncertainty(
     power = power_for(larger, notation)
     number, spread = shift(number, power), shift(spread, power)
     marker = "" if notation == "fixed" else exponent_marker(power)
-    if style == "paren":
+    if chosen == "paren":
         return f"{fixed(number)}({_in_last_digits(number, spread)}){marker}"
     body = f"{fixed(number)} {pm} {fixed(spread)}"
     return f"({body}){marker}" if marker else body
