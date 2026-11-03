@@ -192,6 +192,62 @@ Evidence: `C:/lianes8-build/codex-pylib/scratch/sigfigs-cert/fix-r2/`, containin
 
 None.
 
+## QA lenses, round 3
+
+Reviewed head: `fc67c43474d29fdb6bd4f0f98d8582b480b10741`.
+Fix commit: `9a5d899ccacb56648d0f3bf02eed09c3d6b9e122`
+(`dispatch inputs and options by real type without instance hooks`).
+Date: 2026-11-03. The reported finding is accepted and addressed at its root.
+Independent confirmation by the adversarial lens remains pending; rerunning its
+checks here does not constitute a new independent PASS verdict.
+
+| Finding | Change and verification |
+| --- | --- |
+| C-09 | `isinstance` falls back to an instance's `__class__` attribute, so a subclass overriding `__getattribute__` ran code before normalization. Every public entry point now dispatches on `type()` and `issubclass` of the real type and reads values through base-class methods. |
+
+Paths audited and closed in the same way:
+
+1. Numeric inputs of `round_decimal`, `round_sig`, `format_sig`, `round_uncertainty`
+   and `format_uncertainty`: str, int, float and Decimal subclasses are converted to
+   their stored base value (`str.strip`, `int.__int__`, `float.__repr__`, `Decimal()`)
+   before any method call, so later `is_finite`, `is_zero`, comparisons and
+   quantization only see exact `Decimal` values.
+2. Figure counts in both rounding families: real-type check, then `int.__int__`.
+3. `rounding` and `uncertainty_rounding`: stored text before the dictionary lookup,
+   so overridden `__hash__` and `__eq__` never run.
+4. `notation`: the same real-type helper (already normalized in round 2).
+5. `style`: stored text before membership and dispatch comparisons.
+6. `pm`: stored text before f-string rendering, so `__format__` never runs.
+7. `sci`, `trailing_point` and `strict`: `type(value) is bool`, so an object
+   claiming `bool` through `__class__` cannot reach `__bool__`.
+8. `sig_bounds` and `count_sig`: real-type dispatch, `str.strip` on stored text and
+   a base `Decimal` copy before inspection.
+9. CLI `main(argv)`: str subclass arguments are passed to argparse as stored text.
+
+Objects that only claim an accepted type through `__class__` now raise `TypeError`
+with the documented messages; the CHANGELOG records both behaviour changes.
+
+### Regression evidence and validation
+
+`tests/test_attribute_hooks.py` adds 30 hand-written cases using subclasses whose
+attribute access and 28 overridable special methods record each call and raise.
+Each asserts the stored-value result and an empty call record, or a typed error.
+On the reviewed code 29 failed; the notation case passed, being already closed.
+All 30 pass after the fix, including the reviewer's minimal C-09 reproduction.
+
+On local CPython 3.14.6, all four required gates exit 0: `ruff format --check .`,
+`ruff check .`, `mypy --strict src`, and pytest (also `mypy --strict src tests`).
+The suite passes 336 tests; the 3 skipped are the built-artifact e2e cases, not
+rerun because packaging is unchanged since round 2. All Python source/test files
+remain at most 200 lines. Every pytest invocation uses a 300-second timeout and
+scratch basetemp. The earlier interpreter matrix is historical evidence.
+
+Evidence: `D:/pylib-scratch/sigfigs-cert/fix-r3/`, containing `red.log` and `full.log`.
+
+### Disputed findings
+
+None.
+
 ## Remaining certification stages
 
 Item 16 and the five lens confirmations under item 19 remain pending. Earlier
