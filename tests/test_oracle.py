@@ -4,18 +4,18 @@ Oracles: ``Decimal.quantize`` in each rounding mode, ``format(Decimal, ".{n-1}e"
 ``format(x, ".{n}g")``. Known, documented differences (GUIDE.md):
 
 * ``'g'`` drops insignificant trailing zeros and switches to scientific notation by
-  magnitude; sigfigs keeps the zeros and lets the caller pick the notation, so the
+  magnitude; figround keeps the zeros and lets the caller pick the notation, so the
   comparison is by numeric value.
-* For a float, ``'g'`` rounds the exact binary value while sigfigs rounds ``repr(x)``.
+* For a float, ``'g'`` rounds the exact binary value while figround rounds ``repr(x)``.
   They differ only when the two decimals fall on different sides of a rounding
   boundary; the test checks that every disagreement is such a case.
 """
 
+import decimal
 import random
 from decimal import Decimal, localcontext
 
-from sigfigs import ROUNDING_MODES, format_sig, round_decimal
-from sigfigs._modes import decimal_mode
+from figround import ROUNDING_MODES, format_sig, round_decimal
 
 SEED = 20261012
 COUNT = 3000
@@ -31,7 +31,7 @@ def _quantize_oracle(value: Decimal, figures: int, mode: str) -> Decimal:
     with localcontext() as ctx:
         ctx.prec = 100
         quantum = Decimal(1).scaleb(value.adjusted() - figures + 1)
-        return value.quantize(quantum, rounding=decimal_mode(mode))
+        return value.quantize(quantum, rounding=getattr(decimal, "ROUND_" + mode.upper()))
 
 
 def test_matches_decimal_quantize_in_every_mode() -> None:

@@ -1,8 +1,8 @@
-"""The ``sigfigs`` command, driven in-process. The installed script is checked by the e2e."""
+"""The ``figround`` command, driven in-process. The installed script is checked by the e2e."""
 
 import pytest
 
-from sigfigs._cli import main
+from figround._cli import main
 
 
 def run(capsys: pytest.CaptureFixture[str], *argv: str) -> tuple[int, str, str]:
@@ -52,7 +52,7 @@ def test_bad_input_exits_1_with_message(
 ) -> None:
     status, out, err = run(capsys, *argv)
     assert (status, out) == (1, "")
-    assert err.startswith("sigfigs: error: ")
+    assert err.startswith("figround: error: ")
 
 
 @pytest.mark.parametrize(
@@ -71,7 +71,7 @@ def test_bad_usage_exits_2(capsys: pytest.CaptureFixture[str], argv: list[str]) 
     with pytest.raises(SystemExit) as stop:
         main(argv)
     assert stop.value.code == 2
-    assert "usage: sigfigs" in capsys.readouterr().err
+    assert "usage: figround" in capsys.readouterr().err
 
 
 @pytest.mark.parametrize("command", [[], ["round"], ["count"], ["format"]])
@@ -81,4 +81,36 @@ def test_help_has_examples(capsys: pytest.CaptureFixture[str], command: list[str
     assert stop.value.code == 0
     out = capsys.readouterr().out
     assert "examples:" in out
-    assert "sigfigs " in out
+    assert "figround " in out
+
+
+@pytest.mark.parametrize(
+    "argv",
+    [
+        ["SECRET" * 1000],
+        ["round", "1", "SECRET" * 1000],
+        ["round", "1", "2", "--rounding", "SECRET" * 1000],
+    ],
+)
+def test_usage_errors_do_not_echo_arguments(
+    capsys: pytest.CaptureFixture[str], argv: list[str]
+) -> None:
+    with pytest.raises(SystemExit) as stop:
+        main(argv)
+    assert stop.value.code == 2
+    output = capsys.readouterr()
+    assert output.out == ""
+    assert "SECRET" not in output.err
+    assert len(output.err) < 1000
+
+
+def test_closed_output_pipe_returns_one(monkeypatch: pytest.MonkeyPatch) -> None:
+    import io
+    import sys
+
+    class ClosedPipe(io.StringIO):
+        def flush(self) -> None:
+            raise BrokenPipeError
+
+    monkeypatch.setattr(sys, "stdout", ClosedPipe())
+    assert main(["round", "1.2", "3"]) == 1

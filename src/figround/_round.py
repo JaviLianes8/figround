@@ -2,64 +2,99 @@
 
 from __future__ import annotations
 
-from decimal import MAX_EMAX, MIN_EMIN, Context, Decimal, DecimalException, Underflow
+from decimal import (
+    MAX_EMAX,
+    MIN_EMIN,
+    Context,
+    Decimal,
+    DecimalException,
+    InvalidOperation,
+    Overflow,
+    Underflow,
+)
+from typing import cast
 
 from ._errors import InvalidFiguresError, InvalidNumberError
 from ._modes import Rounding, decimal_mode
+from ._validation import is_kind
 
 MAX_FIGURES = 10_000
 """Largest accepted count of significant figures; larger counts raise InvalidFiguresError."""
+_MAX_INTEGER_BITS = 65_536
 
 Number = int | float | str | Decimal
-"""Accepted numeric input. Floats are read through ``repr``, the shortest round-trip text."""
+"""Accepted numeric input. Floats use their shortest round-trip text.
+
+>>> sample: Number = "1.20"
+>>> round_decimal(sample, 3)
+Decimal('1.20')
+"""
 
 
 def to_decimal(x: Number) -> Decimal:
-    """Convert an accepted input to a finite Decimal without any binary rounding."""
-    if isinstance(x, bool):
+    """Convert an accepted input to a finite Decimal without any binary rounding.
+
+    Dispatch uses the real type and base-class methods, so subclass hooks never run.
+    """
+    if type(x) is bool:
         raise TypeError("booleans are not valid numbers")
-    if isinstance(x, Decimal):
-        value = x
-    elif isinstance(x, int):
-        value = Decimal(x)
-    elif isinstance(x, float):
-        value = Decimal(repr(x))
-    elif isinstance(x, str):
+    if is_kind(x, Decimal):
+        value = Decimal(cast(Decimal, x))
+    elif is_kind(x, int):
+        whole = int.__int__(cast(int, x))
+        if whole.bit_length() > _MAX_INTEGER_BITS:
+            raise InvalidNumberError("integer input exceeds 65536 bits; use str or Decimal")
+        value = Decimal(whole)
+    elif is_kind(x, float):
+        value = Decimal(
+            float.__repr__(cast(float, x)), context=exact_context(28, "ROUND_HALF_EVEN")
+        )
+    elif is_kind(x, str):
         try:
-            value = Decimal(x.strip())
-        except DecimalException as error:
-            raise InvalidNumberError(f"not a number: {x!r}") from error
+            text = str.strip(cast(str, x))
+            value = Decimal(text, context=exact_context(28, "ROUND_HALF_EVEN"))
+        except DecimalException:
+            raise InvalidNumberError("not a number") from None
     else:
-        raise TypeError(f"unsupported type: {type(x).__name__}")
+        raise TypeError("expected int, float, str or Decimal")
     if not value.is_finite():
-        raise InvalidNumberError(f"not a finite number: {x!r}")
+        raise InvalidNumberError("not a finite number")
     return value
 
 
-def check_figures(figures: int, name: str = "figures") -> None:
+def check_figures(figures: int, name: str = "figures") -> int:
     """Reject a figures count that is not an int from 1 to ``MAX_FIGURES``."""
-    if isinstance(figures, bool) or not isinstance(figures, int):
+    if type(figures) is bool or not is_kind(figures, int):
         raise TypeError(f"{name} must be an int")
+    figures = int.__int__(figures)
     if not 1 <= figures <= MAX_FIGURES:
-        raise InvalidFiguresError(f"{name} must be from 1 to {MAX_FIGURES}, got {figures}")
+        raise InvalidFiguresError(f"{name} must be from 1 to {MAX_FIGURES}")
+    return figures
 
 
 def exact_context(digits: int, rounding: str) -> Context:
     """A context that traps overflow, underflow and invalid operations."""
-    ctx = Context(prec=digits, rounding=rounding, Emax=MAX_EMAX, Emin=MIN_EMIN)
-    ctx.traps[Underflow] = True
-    return ctx
+    return Context(
+        prec=digits,
+        rounding=rounding,
+        Emax=MAX_EMAX,
+        Emin=MIN_EMIN,
+        capitals=1,
+        clamp=0,
+        flags=[],
+        traps=[InvalidOperation, Overflow, Underflow],
+    )
 
 
-def out_of_range(x: object) -> InvalidNumberError:
+def out_of_range() -> InvalidNumberError:
     """The error for a value whose exponent leaves the representable decimal range."""
-    return InvalidNumberError(f"exponent out of range: {x!r}")
+    return InvalidNumberError("exponent out of range")
 
 
 def round_value(value: Decimal, figures: int, rounding: str) -> Decimal:
     """Round a finite Decimal to ``figures`` digits with a ``decimal`` rounding constant.
 
-    The result always carries exactly ``figures`` coefficient digits, so its exponent
+    A nonzero result always carries exactly ``figures`` coefficient digits, so its exponent
     records which digits are significant. Zero becomes a positive zero with
     ``figures - 1`` decimal places, matching how ``format_sig`` writes it.
     """
@@ -71,7 +106,7 @@ def round_value(value: Decimal, figures: int, rounding: str) -> Decimal:
         quantum = Decimal(1).scaleb(rounded.adjusted() - figures + 1, ctx)
         return rounded.quantize(quantum, context=ctx)
     except DecimalException:
-        raise out_of_range(value) from None
+        raise out_of_range() from None
 
 
 def round_decimal(x: Number, figures: int, *, rounding: Rounding = "half_even") -> Decimal:
@@ -87,17 +122,22 @@ def round_decimal(x: Number, figures: int, *, rounding: Rounding = "half_even") 
     Decimal('3')
 
     ``rounding`` is one of ``ROUNDING_MODES``; the default ``"half_even"`` is the rule of
-    NIST SP 811 B.7.1 and the IEEE 754 default. Floats are read through ``repr`` (so
-    ``2.675`` is the decimal 2.675, not its binary neighbour).
+    NIST SP 811 B.7.1 and the IEEE 754 default. Floats use the base float ``repr``
+    (so ``2.675`` is decimal 2.675, not its binary neighbour). Integer inputs are
+    limited to 65536 bits; pass larger values as decimal text or Decimal.
+    Integer subclasses used as ``figures`` are read as their underlying integer.
+    Subclasses of the accepted types are read as their stored base value; their
+    overridden methods and attribute hooks never run.
 
     Raises:
-        TypeError: ``x`` or ``figures`` has an unsupported type.
+        TypeError: ``x``, ``figures`` or ``rounding`` has an unsupported type.
         InvalidNumberError: ``x`` is unparsable text, NaN, infinite, or so large or
-            small that its exponent leaves the decimal range.
+            small that its exponent leaves the decimal range, or an integer input
+            exceeds 65536 bits.
         InvalidFiguresError: ``figures`` is below one or above ``MAX_FIGURES``.
         InvalidOptionError: ``rounding`` is not a known mode.
     """
-    check_figures(figures)
+    figures = check_figures(figures)
     mode = decimal_mode(rounding)
     return round_value(to_decimal(x), figures, mode)
 

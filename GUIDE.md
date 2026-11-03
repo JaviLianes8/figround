@@ -1,4 +1,4 @@
-# sigfigs guide
+# figround guide
 
 This guide covers every public name, the rules each one follows and where the
 standard library behaves differently. All arithmetic is exact decimal arithmetic
@@ -7,21 +7,26 @@ conversion in `round_sig`.
 
 ## Inputs
 
-Every function that takes a number accepts `int`, `float`, `str` or `Decimal`
-(`sigfigs.Number`). Booleans and other types raise `TypeError`.
+Rounding and formatting accept `int`, `float`, `str` or `Decimal`
+(`figround.Number`). Booleans and other types raise `TypeError`.
 
 - A `str` is parsed by `Decimal`, so `"1.20"`, `"-3e-4"` and `" 42 "` work.
-- A `float` is read through `repr(x)`, the shortest text that round-trips to the
+- A `float` is read through the base float `repr`, the shortest text that round-trips to the
   same float. `2.675` is therefore the decimal 2.675, not the binary value
   2.67499999999999982236431605997495353221893310546875 that the float stores.
   This is what you typed, and it is why `format_sig(2.675, 3)` is `"2.68"` while
   `format(2.675, ".3g")` is `"2.67"`. Pass `Decimal(x)` if you want the exact
-  binary value instead.
+  binary value instead. Subclasses use their stored float value, ignoring custom
+  representations and conversion methods.
+- An `int` is limited to 65536 bits in magnitude before Decimal conversion. Larger
+  integers raise `InvalidNumberError`; supply decimal text or a `Decimal` instead.
 - NaN, infinities and unparsable text raise `InvalidNumberError`.
 - Rounding accepts any text `Decimal` accepts, including `"1_000"`; counting
   (below) accepts only plain ASCII decimal text, since it reads the digits as written.
 
-Limits: `figures` is at most 10000 (`InvalidFiguresError` above it); a value whose
+Limits: `figures` is at most 10000 (`InvalidFiguresError` above it); integer subclasses
+used as figure counts are normalized to their stored integer before validation.
+A value whose
 exponent leaves the decimal range raises `InvalidNumberError`; fixed notation writes
 at most 10000 placeholder zeros and raises `InvalidNumberError` beyond that, so very
 large or small magnitudes need `notation="sci"`. `round_sig` returns a `float`, so a
@@ -30,17 +35,23 @@ result beyond the float range becomes `inf` or `0.0`; `round_decimal` does not.
 ## Rounding: `round_decimal`, `round_sig`
 
 ```python
+from decimal import Decimal
+from figround import (
+    AmbiguousFiguresError, count_sig, format_sig, format_uncertainty,
+    round_decimal, round_sig, round_uncertainty, sig_bounds,
+)
+
 round_decimal(1.2, 3)                     # Decimal('1.20')
 round_decimal(123456, 2)                  # Decimal('1.2E+5')
 round_decimal("2.5", 1, rounding="half_up")  # Decimal('3')
 round_sig(0.0125, 2, rounding="half_up")  # 0.013
 ```
 
-`round_decimal` returns a `Decimal` with exactly `figures` coefficient digits, so
+`round_decimal` returns a `Decimal` with exactly `figures` coefficient digits for a nonzero result, so
 its exponent records which digits are significant. `round_sig` converts that to
 `float` (the 0.1.0 function, unchanged by default).
 
-`rounding` is one of `sigfigs.ROUNDING_MODES`:
+`rounding` is one of `figround.ROUNDING_MODES`:
 
 | mode | rule |
 | --- | --- |
@@ -65,6 +76,12 @@ Zero rounds to a positive zero with `figures - 1` decimal places
 ## Formatting: `format_sig`
 
 ```python
+from decimal import Decimal
+from figround import (
+    AmbiguousFiguresError, count_sig, format_sig, format_uncertainty,
+    round_decimal, round_sig, round_uncertainty, sig_bounds,
+)
+
 format_sig(1.2, 3)                      # '1.20'
 format_sig(0.00012345, 2, sci=True)     # '1.2e-04'
 format_sig(123456, 4, notation="eng")   # '123.5e+03'
@@ -90,10 +107,19 @@ way to mark them.
 ## Counting: `count_sig`, `sig_bounds`
 
 ```python
+from decimal import Decimal
+from figround import (
+    AmbiguousFiguresError, count_sig, format_sig, format_uncertainty,
+    round_decimal, round_sig, round_uncertainty, sig_bounds,
+)
+
 count_sig("0.0450")        # 3
 count_sig("6.022e23")      # 4
 sig_bounds("1200")         # (2, 4)
-count_sig("1200", strict=True)  # AmbiguousFiguresError
+try:
+    count_sig("1200", strict=True)
+except AmbiguousFiguresError:
+    pass
 ```
 
 Rules:
@@ -128,6 +154,12 @@ Measurement (GUM), clause 7.2:
   confidence interval, so the parenthesis form is the default.
 
 ```python
+from decimal import Decimal
+from figround import (
+    AmbiguousFiguresError, count_sig, format_sig, format_uncertainty,
+    round_decimal, round_sig, round_uncertainty, sig_bounds,
+)
+
 round_uncertainty("10.05762", "0.027")       # (Decimal('10.058'), Decimal('0.027'))
 format_uncertainty(100.02147, 0.00035)       # '100.02147(35)'
 format_uncertainty("123456", "1234")         # '123500(1200)'
@@ -140,20 +172,41 @@ units of one. In `sci` and `eng` notation both numbers share one exponent, taken
 from whichever of the two has the larger magnitude. The uncertainty must be
 positive (`UncertaintyError` otherwise).
 
+The rounded value may contain up to 100000 coefficient digits, including any
+rounding carry. Zero needs only one coefficient digit regardless of its original
+exponent or the uncertainty scale; fixed-format output limits still apply.
+
 ## Errors
 
-All value errors derive from `SigFigsError`, which derives from `ValueError`, so
+All value errors derive from `FigroundError`, which derives from `ValueError`, so
 code written for 0.1.0 that catches `ValueError` keeps working.
 
 | error | raised when |
 | --- | --- |
-| `InvalidNumberError` | text that is not a number, NaN or infinity |
-| `InvalidFiguresError` | `figures` below one |
+| `InvalidNumberError` | invalid or nonfinite input, integer input above 65536 bits, exponent outside the decimal range, or too many fixed-notation zeros |
+| `InvalidFiguresError` | `figures` outside 1 to 10000 |
 | `InvalidOptionError` | unknown `rounding`, `notation` or `style`, or `sci=True` with another notation |
 | `AmbiguousFiguresError` | `count_sig(..., strict=True)` on ambiguous trailing zeros |
-| `UncertaintyError` | an uncertainty that is zero or negative |
+| `UncertaintyError` | nonpositive uncertainty or more than 100000 required value digits |
 
-Wrong argument types raise `TypeError`.
+Wrong argument types raise `TypeError`. Boolean options (`strict`, `sci`, and
+`trailing_point`) require actual booleans; `pm` requires a string. Unknown option
+strings raise `InvalidOptionError`. Diagnostics do not echo input values, and decimal
+operations leave the caller's context and flags unchanged, including on failure.
+
+The public type aliases are `Number`, `Rounding`, `Notation` and `Style`;
+`ROUNDING_MODES`, `NOTATIONS` and `STYLES` enumerate the corresponding option strings.
+Only the names in `figround.__all__` and `figround.__version__` are public.
+
+## Upgrading to 1.0.0
+
+Install `figround` and use `from figround import ...`; the command and module runner
+are `figround` and `python -m figround`. The base exception is `FigroundError`.
+Numeric results, function names, signatures and defaults remain those of 0.2.1.
+Wrong option types now raise `TypeError`; errors omit input values; malformed decimal
+text no longer changes context flags. Modified `decimal.DefaultContext` settings do
+not affect rounding. CLI usage failures use a generic diagnostic and exit 2; a closed
+output pipe returns 1 quietly.
 
 ## How this differs from `format(x, ".{n}g")`
 
@@ -180,23 +233,23 @@ of `format_sig` against `'g'`, on seeded random inputs.
 
 ## Command line
 
-Installing the package adds a `sigfigs` command (also `python -m sigfigs`):
+Installing the package adds a `figround` command (also `python -m figround`):
 
 ```
-sigfigs round 2.675 3                     # 2.68
-sigfigs round 123456 4 --notation eng     # 123.5e+03
-sigfigs count 0.00120 1200 1200.          # 3, 2 and 4, one per line
-sigfigs count 1200 --bounds               # 2 4
-sigfigs format 100.02147 -u 0.00035       # 100.02147(35)
-sigfigs format 100.02147 -u 0.00035 --style pm   # 100.02147 +/- 0.00035
-sigfigs format 1234.5 --figures 3 --notation sci # 1.23e+03
+figround round 2.675 3                     # 2.68
+figround round 123456 4 --notation eng     # 123.5e+03
+figround count 0.00120 1200 1200.          # 3, 2 and 4, one per line
+figround count 1200 --bounds               # 2 4
+figround format 100.02147 -u 0.00035       # 100.02147(35)
+figround format 100.02147 -u 0.00035 --style pm   # 100.02147 +/- 0.00035
+figround format 1234.5 --figures 3 --notation sci # 1.23e+03
 ```
 
 A negative number may need `--` before it when it could be read as an option.
 `format` without `--uncertainty` formats the value alone and rejects the
 uncertainty-only options (`--style`, `--pm`, `--uncertainty-rounding`). `count`
 prints nothing when any of its numbers is invalid.
-Invalid input prints `sigfigs: error: ...` to standard error and exits with
+Invalid input prints `figround: error: ...` to standard error and exits with
 status 1; invalid usage exits with status 2. Each command has `--help` with
 examples.
 

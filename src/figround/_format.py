@@ -6,14 +6,15 @@ from ._errors import InvalidOptionError
 from ._modes import Notation, Rounding, check_notation
 from ._render import exponent_marker, fixed, power_for, shift
 from ._round import Number, round_decimal
+from ._validation import check_bool
 
 
 def _resolve_notation(sci: bool, notation: str | None) -> str:
     if notation is None:
         return "sci" if sci else "fixed"
-    check_notation(notation)
+    notation = check_notation(notation)
     if sci and notation != "sci":
-        raise InvalidOptionError(f"sci=True conflicts with notation={notation!r}")
+        raise InvalidOptionError("sci=True requires scientific notation")
     return notation
 
 
@@ -46,10 +47,14 @@ def format_sig(
     is ``"10e+00"``). Fixed notation refuses to write more than 10000 placeholder zeros
     (``InvalidNumberError``); use ``"sci"`` for such magnitudes.
     ``trailing_point`` marks a whole number whose zeros are all significant.
+    Notation string subclasses use their stored text, ignoring overridden methods.
 
     Raises the errors of ``round_decimal``, plus ``InvalidOptionError`` for an unknown
-    ``notation`` or one that conflicts with ``sci=True``.
+    ``notation`` or one that conflicts with ``sci=True``. Wrong option types raise
+    ``TypeError``; ``sci`` and ``trailing_point`` must be actual booleans.
     """
+    check_bool(sci, "sci")
+    check_bool(trailing_point, "trailing_point")
     chosen = _resolve_notation(sci, notation)
     rounded = round_decimal(x, figures, rounding=rounding)
     if chosen == "fixed":

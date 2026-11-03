@@ -3,44 +3,50 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "sigfigs"
-version = "0.2.1"
+name = "figround"
+version = "1.0.0"
 description = "Significant-figures rounding and formatting with exact Decimal math and preserved trailing zeros"
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
 license-files = ["LICENSE"]
 authors = [{ name = "Javier Lianes", email = "javier@lianes8studio.com" }]
-keywords = ["significant figures", "rounding", "decimal", "formatting", "sigfigs"]
+keywords = ["significant figures", "rounding", "decimal", "formatting", "figround"]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Typing :: Typed",
 ]
 dependencies = []
 
 [project.optional-dependencies]
-dev = ["ruff", "mypy", "pytest", "build", "twine"]
+dev = ["ruff", "mypy", "pytest", "pytest-timeout", "build", "twine"]
 
 [project.urls]
 Homepage = "https://lianes8studio.com"
-Repository = "https://github.com/JaviLianes8/sigfigs"
+Source = "https://github.com/JaviLianes8/sigfigs"
 Issues = "https://github.com/JaviLianes8/sigfigs/issues"
 Changelog = "https://github.com/JaviLianes8/sigfigs/blob/main/CHANGELOG.md"
 LinkedIn = "https://www.linkedin.com/in/jlianes/"
 Funding = "https://buymeacoffee.com/jlianesglrs"
 
 [project.scripts]
-sigfigs = "sigfigs._cli:main"
+figround = "figround._cli:main"
 
 [tool.hatch.build.targets.sdist]
 # Third-party test files are fetched locally and never shipped; only their manifest is.
 include = [
-    "src/sigfigs",
+    "src/figround",
     "tests/*.py",
     "tests/upstream/MANIFEST.json",
     "scripts/fetch_upstream.py",
+    "scripts/check.ps1",
     "CHANGELOG.md",
     "GUIDE.md",
     "README.md",
@@ -49,7 +55,7 @@ include = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/sigfigs"]
+packages = ["src/figround"]
 
 [tool.ruff]
 line-length = 100
@@ -67,3 +73,4 @@ strict = true
 testpaths = ["tests", "src"]
 pythonpath = ["src"]
 addopts = "-q --doctest-modules"
+timeout = 300

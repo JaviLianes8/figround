@@ -6,6 +6,50 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-11-03
+
+### Changed
+
+- Rename the distribution, import package and CLI from `sigfigs` to `figround`; rename the base exception from `SigFigsError` to `FigroundError`.
+- Stabilize seven numeric functions, six exception classes, four type aliases and
+  three option tuples; numeric results, signatures and defaults are unchanged.
+- Invalid inputs and options no longer appear in error messages. Extremely wide
+  invalid figure counts raise `InvalidFiguresError` without integer conversion errors.
+- Parsing malformed decimal text leaves the caller's decimal context flags unchanged.
+  Rounding is isolated from modified `decimal.DefaultContext` traps and clamp settings.
+- Wrong option types raise `TypeError`, including nonboolean `strict`, `sci` and
+  `trailing_point` values and nonstring `pm` values.
+- CLI usage errors omit supplied arguments and direct callers to `--help` (exit 2).
+  Closed output pipes return exit 1 without a traceback.
+- Publish Python 3.10 to 3.14 classifiers and Production/Stable metadata; include
+  runnable API examples, contract tests, reference vectors and wheel validation.
+- Accept uncertainty results with exactly 100000 coefficient digits, while rejecting
+  a rounding carry beyond that limit. Zero precision no longer depends on its stored
+  exponent or the uncertainty scale.
+- Limit integer numeric inputs to 65536 bits before Decimal conversion to bound its
+  cost; larger integers raise `InvalidNumberError`. Use decimal text or `Decimal`
+  for larger values.
+- Read float subclasses through the base float representation in an isolated context;
+  normalize integer figure-count subclasses before validation and arithmetic.
+- Notation conflict errors use a bounded message without rendering the supplied option.
+- Parse numeric string subclasses from their stored text without invoking overridden
+  stripping or conversion methods, preventing integer substitution and raw exceptions.
+- Normalize notation string subclasses to their stored text before validation,
+  conflict checks and rendering in both formatting functions. Overridden comparisons
+  and conversions no longer affect results or escape the documented error types.
+- Read subclasses of every accepted input and option type by their real type and
+  stored base value: numbers, figure counts, rounding, notation, style, `pm`, counted
+  text and CLI arguments. Overridden attribute access, comparisons, hashing, conversion
+  and formatting no longer run, change results or escape the documented error types.
+- Boolean options and numeric or text inputs are checked by their real type; objects
+  that only claim a type through `__class__` now raise `TypeError`.
+- Handle Windows closed-pipe errors during writes and flushes, preventing a second
+  failing flush during shutdown. Other output errors still propagate.
+- Restore repository links, historical release names and runnable version metadata
+  documentation; include `scripts/check.ps1` in the source archive.
+- Add regression contracts for float underflow signs, Decimal zero counts, separate
+  value and uncertainty rounding modes, positive uncertainty-result zero and limits.
+
 ## [0.2.1] - 2026-10-13
 
 ### Changed

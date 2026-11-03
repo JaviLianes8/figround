@@ -2,7 +2,7 @@ from decimal import Decimal
 
 import pytest
 
-from sigfigs import format_sig, round_sig
+from figround import format_sig, round_sig
 
 
 def test_keeps_trailing_zeros() -> None:

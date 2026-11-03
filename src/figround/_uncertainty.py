@@ -9,11 +9,21 @@ from ._errors import InvalidOptionError, UncertaintyError
 from ._modes import Notation, Rounding, check_notation, decimal_mode
 from ._render import exponent_marker, fixed, power_for, shift
 from ._round import Number, check_figures, exact_context, out_of_range, round_value, to_decimal
+from ._validation import check_str
 
 Style = Literal["paren", "pm"]
-"""``"paren"`` writes ``1.234(5)`` (GUM 7.2.2 form 2), ``"pm"`` writes ``1.234 +/- 0.005``."""
+"""Parenthesis or plus-minus uncertainty notation.
+
+>>> get_args(Style) == STYLES
+True
+"""
 
 STYLES: tuple[str, ...] = get_args(Style)
+"""All accepted uncertainty styles.
+
+>>> STYLES
+('paren', 'pm')
+"""
 _MAX_DIGITS = 100_000
 
 
@@ -47,29 +57,34 @@ def round_uncertainty(
         TypeError, InvalidNumberError, InvalidFiguresError, InvalidOptionError: as in
             ``round_decimal``.
     """
-    check_figures(figures)
+    figures = check_figures(figures)
     value_mode = decimal_mode(rounding)
     unc_mode = decimal_mode(rounding if uncertainty_rounding is None else uncertainty_rounding)
     number, spread = to_decimal(value), to_decimal(uncertainty)
     if spread <= 0:
-        raise UncertaintyError(f"uncertainty must be positive, got {uncertainty!r}")
+        raise UncertaintyError("uncertainty must be positive")
     spread = round_value(spread, figures, unc_mode)
     place = spread.as_tuple().exponent
     assert isinstance(place, int)
-    digits = max(number.adjusted() - place + 2, 1)
+    digits = 1 if number.is_zero() else max(number.adjusted() - place + 1, 1)
     if digits > _MAX_DIGITS:
         raise UncertaintyError("the value needs more than 100000 digits at this uncertainty")
-    ctx = exact_context(digits, value_mode)
+    # Allow a carry during rounding, then enforce the limit on the actual result.
+    ctx = exact_context(digits + 1, value_mode)
     try:
         rounded = number.quantize(Decimal(1).scaleb(place, ctx), context=ctx)
     except DecimalException:
-        raise out_of_range(value) from None
+        raise out_of_range() from None
+    if len(rounded.as_tuple().digits) > _MAX_DIGITS:
+        raise UncertaintyError("the value needs more than 100000 digits at this uncertainty")
     return (rounded.copy_abs() if rounded.is_zero() else rounded), spread
 
 
-def _check_style(style: str) -> None:
+def _check_style(style: str) -> str:
+    style = check_str(style, "style")
     if style not in STYLES:
-        raise InvalidOptionError(f"unknown style {style!r}; use one of {', '.join(STYLES)}")
+        raise InvalidOptionError(f"unknown style; use one of {', '.join(STYLES)}")
+    return style
 
 
 def _in_last_digits(value: Decimal, spread: Decimal) -> str:
@@ -109,10 +124,12 @@ def format_uncertainty(
     whichever of the two has the larger magnitude.
 
     Raises the errors of ``round_uncertainty``, plus ``InvalidOptionError`` for an
-    unknown ``style`` or ``notation``.
+    unknown ``style`` or ``notation``. Wrong option types raise ``TypeError``;
+    ``pm`` must be a string. String subclass options are read as their stored text.
     """
-    _check_style(style)
-    check_notation(notation)
+    pm = check_str(pm, "pm")
+    chosen = _check_style(style)
+    notation = check_notation(notation)
     number, spread = round_uncertainty(
         value,
         uncertainty,
@@ -124,7 +141,7 @@ def format_uncertainty(
     power = power_for(larger, notation)
     number, spread = shift(number, power), shift(spread, power)
     marker = "" if notation == "fixed" else exponent_marker(power)
-    if style == "paren":
+    if chosen == "paren":
         return f"{fixed(number)}({_in_last_digits(number, spread)}){marker}"
     body = f"{fixed(number)} {pm} {fixed(spread)}"
     return f"({body}){marker}" if marker else body

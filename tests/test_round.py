@@ -2,7 +2,7 @@ from decimal import Decimal
 
 import pytest
 
-from sigfigs import round_sig
+from figround import round_sig
 
 
 def test_rounds_to_significant_figures() -> None:

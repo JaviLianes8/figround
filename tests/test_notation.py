@@ -4,7 +4,7 @@ from decimal import Decimal
 
 import pytest
 
-from sigfigs import ROUNDING_MODES, InvalidOptionError, format_sig, round_decimal, round_sig
+from figround import ROUNDING_MODES, InvalidOptionError, format_sig, round_decimal, round_sig
 
 
 @pytest.mark.parametrize(
@@ -87,7 +87,7 @@ def test_huge_and_tiny_exponents_are_exact() -> None:
 
 
 def test_floats_are_read_through_repr() -> None:
-    # 2.675 as a binary float is 2.67499999...; sigfigs reads the shortest repr "2.675".
+    # 2.675 as a binary float is 2.67499999...; figround reads the shortest repr "2.675".
     assert format_sig(2.675, 3) == "2.68"
     assert format_sig(0.1 + 0.2, 2) == "0.30"
     assert round_decimal(1e22, 2) == Decimal("1.0E+22")
