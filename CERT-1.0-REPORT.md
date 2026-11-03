@@ -13,7 +13,7 @@ Progress:
 - [x] Run every available supported interpreter
 - [x] Complete mutation round
 - [x] Final gates
-- [ ] Open release PR
+- [x] Open release PR #4; guard CLEAN
 - [ ] Independent review and five QA lenses
 - [ ] Merge and publish
 
@@ -63,8 +63,9 @@ reference archive directory. Without the archive, its two tests skip cleanly.
 ## Baseline and current checks
 
 Before changes: 198 passed, two optional archive tests skipped; format, lint and
-`mypy --strict src tests` passed. The final source suite contains 249 tests including live archive tests, executable
-README/GUIDE blocks, attribute docstrings and module doctests, plus three artifact checks.
+`mypy --strict src tests` passed. The final source suite contains 249 tests including
+live archive tests, executable README/GUIDE blocks, attribute docstrings and module
+doctests, plus three artifact checks.
 
 ## Remaining certification stages
 
@@ -154,8 +155,8 @@ Artifact identities from the inspected build:
 All four commands exited 0 independently: `ruff format --check .`, `ruff check .`,
 `mypy --strict src`, and `python -m pytest`. The additional `mypy --strict src tests`
 check passed for 30 files. The final pytest run passed 252 tests with no skips,
-including the built-wheel consumer and both artifact inspections. Every pytest run
-used `pytest-timeout` with 300 seconds per test and a dedicated scratch basetemp.
+including the built-wheel consumer and both artifact inspections. Final pytest checks
+use `pytest-timeout` with 300 seconds per test and dedicated scratch basetemps.
 The live archive and both artifact paths were supplied through `FIGROUND_UPSTREAM_DIR`,
 `FIGROUND_WHEEL` and `FIGROUND_SDIST`. `twine check --strict` passed for both artifacts.
 All 13 package source files stay below 200 lines.
@@ -180,6 +181,6 @@ All 13 package source files stay below 200 lines.
 | 14 | PASS | Inspected sdist and wheel; package, type marker and license included; external archive excluded |
 | 15 | PASS | Four gates exit 0; final suite 252 passed |
 | 16 | PENDING | Independent release reviewer has not evaluated this version |
-| 17 | PENDING | Release PR, merge and publication |
+| 17 | READY | PR #4 from `release/1.0.0` to `main`, guard CLEAN; merge and publication pending |
 | 18 | PASS | 24 deliberately broken variants caught; restored suite passes |
 | 19 | PENDING | No release QA lens verdicts yet |
