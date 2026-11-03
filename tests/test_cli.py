@@ -82,3 +82,35 @@ def test_help_has_examples(capsys: pytest.CaptureFixture[str], command: list[str
     out = capsys.readouterr().out
     assert "examples:" in out
     assert "figround " in out
+
+
+@pytest.mark.parametrize(
+    "argv",
+    [
+        ["SECRET" * 1000],
+        ["round", "1", "SECRET" * 1000],
+        ["round", "1", "2", "--rounding", "SECRET" * 1000],
+    ],
+)
+def test_usage_errors_do_not_echo_arguments(
+    capsys: pytest.CaptureFixture[str], argv: list[str]
+) -> None:
+    with pytest.raises(SystemExit) as stop:
+        main(argv)
+    assert stop.value.code == 2
+    output = capsys.readouterr()
+    assert output.out == ""
+    assert "SECRET" not in output.err
+    assert len(output.err) < 1000
+
+
+def test_closed_output_pipe_returns_one(monkeypatch: pytest.MonkeyPatch) -> None:
+    import io
+    import sys
+
+    class ClosedPipe(io.StringIO):
+        def flush(self) -> None:
+            raise BrokenPipeError
+
+    monkeypatch.setattr(sys, "stdout", ClosedPipe())
+    assert main(["round", "1.2", "3"]) == 1

@@ -20,7 +20,12 @@ MAX_FIGURES = 10_000
 """Largest accepted count of significant figures; larger counts raise InvalidFiguresError."""
 
 Number = int | float | str | Decimal
-"""Accepted numeric input. Floats are read through ``repr``, the shortest round-trip text."""
+"""Accepted numeric input. Floats use their shortest round-trip text.
+
+>>> sample: Number = "1.20"
+>>> round_decimal(sample, 3)
+Decimal('1.20')
+"""
 
 
 def to_decimal(x: Number) -> Decimal:
@@ -75,7 +80,7 @@ def out_of_range() -> InvalidNumberError:
 def round_value(value: Decimal, figures: int, rounding: str) -> Decimal:
     """Round a finite Decimal to ``figures`` digits with a ``decimal`` rounding constant.
 
-    The result always carries exactly ``figures`` coefficient digits, so its exponent
+    A nonzero result always carries exactly ``figures`` coefficient digits, so its exponent
     records which digits are significant. Zero becomes a positive zero with
     ``figures - 1`` decimal places, matching how ``format_sig`` writes it.
     """
@@ -107,7 +112,7 @@ def round_decimal(x: Number, figures: int, *, rounding: Rounding = "half_even") 
     ``2.675`` is the decimal 2.675, not its binary neighbour).
 
     Raises:
-        TypeError: ``x`` or ``figures`` has an unsupported type.
+        TypeError: ``x``, ``figures`` or ``rounding`` has an unsupported type.
         InvalidNumberError: ``x`` is unparsable text, NaN, infinite, or so large or
             small that its exponent leaves the decimal range.
         InvalidFiguresError: ``figures`` is below one or above ``MAX_FIGURES``.

@@ -8,13 +8,31 @@ from typing import Literal, get_args
 from ._errors import InvalidOptionError
 
 Rounding = Literal["half_even", "half_up", "half_down", "up", "down", "ceiling", "floor", "05up"]
-"""Rounding mode names, the same eight algorithms as the ``decimal`` module."""
+"""Rounding mode names, the same eight algorithms as the ``decimal`` module.
+
+>>> get_args(Rounding) == ROUNDING_MODES
+True
+"""
 
 Notation = Literal["fixed", "sci", "eng"]
-"""Output notation: positional, scientific (one leading digit) or engineering (exponent % 3)."""
+"""Output notation: positional, scientific or engineering.
+
+>>> get_args(Notation) == NOTATIONS
+True
+"""
 
 ROUNDING_MODES: tuple[str, ...] = get_args(Rounding)
+"""All accepted rounding option strings, in stable order.
+
+>>> "half_even" in ROUNDING_MODES
+True
+"""
 NOTATIONS: tuple[str, ...] = get_args(Notation)
+"""All accepted output notations.
+
+>>> NOTATIONS
+('fixed', 'sci', 'eng')
+"""
 
 _DECIMAL_MODES = {
     "half_even": decimal.ROUND_HALF_EVEN,

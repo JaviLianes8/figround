@@ -49,7 +49,8 @@ def format_sig(
     ``trailing_point`` marks a whole number whose zeros are all significant.
 
     Raises the errors of ``round_decimal``, plus ``InvalidOptionError`` for an unknown
-    ``notation`` or one that conflicts with ``sci=True``.
+    ``notation`` or one that conflicts with ``sci=True``. Wrong option types raise
+    ``TypeError``; ``sci`` and ``trailing_point`` must be actual booleans.
     """
     check_bool(sci, "sci")
     check_bool(trailing_point, "trailing_point")

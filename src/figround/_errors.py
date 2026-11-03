@@ -15,7 +15,7 @@ class FigroundError(ValueError):
 
 
 class InvalidNumberError(FigroundError):
-    """The input is not a finite number: unparsable text, NaN or infinity.
+    """The input is invalid, nonfinite, outside the decimal range or too wide to render.
 
     >>> isinstance(InvalidNumberError("invalid input"), ValueError)
     True

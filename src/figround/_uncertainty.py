@@ -11,9 +11,18 @@ from ._render import exponent_marker, fixed, power_for, shift
 from ._round import Number, check_figures, exact_context, out_of_range, round_value, to_decimal
 
 Style = Literal["paren", "pm"]
-"""``"paren"`` writes ``1.234(5)`` (GUM 7.2.2 form 2), ``"pm"`` writes ``1.234 +/- 0.005``."""
+"""Parenthesis or plus-minus uncertainty notation.
+
+>>> get_args(Style) == STYLES
+True
+"""
 
 STYLES: tuple[str, ...] = get_args(Style)
+"""All accepted uncertainty styles.
+
+>>> STYLES
+('paren', 'pm')
+"""
 _MAX_DIGITS = 100_000
 
 
@@ -111,7 +120,8 @@ def format_uncertainty(
     whichever of the two has the larger magnitude.
 
     Raises the errors of ``round_uncertainty``, plus ``InvalidOptionError`` for an
-    unknown ``style`` or ``notation``.
+    unknown ``style`` or ``notation``. Wrong option types raise ``TypeError``;
+    ``pm`` must be a string.
     """
     if not isinstance(pm, str):
         raise TypeError("pm must be a str")
