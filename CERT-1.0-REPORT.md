@@ -136,7 +136,7 @@ lint, strict source/test typing and all 295 tests. The pre-QA artifact identitie
 below are superseded for this round by the artifacts under `fix-r1/dist`.
 
 Evidence is retained under
-`C:/lianes8-build/codex-pylib/scratch/sigfigs-cert/fix-r1/`:
+`the build machine scratch folder sigfigs-cert/fix-r1/`:
 `red-corrected.log`, `red.log` (old-artifact failures), `full.log`, `full.xml`,
 `sdist-check.log`, `mutation-results.json`, each mutation's `result.log`,
 `timings.json`, `links.json` and `dist/`.
@@ -184,7 +184,7 @@ and sdist pass `twine check --strict`. All Python source/test files remain at mo
 200 lines. Every pytest invocation uses a 300-second timeout and scratch basetemp.
 The earlier interpreter matrix is historical evidence, not a rerun for this round.
 
-Evidence: `C:/lianes8-build/codex-pylib/scratch/sigfigs-cert/fix-r2/`, containing
+Evidence: `the build machine scratch folder sigfigs-cert/fix-r2/`, containing
 `red.log`, `green.log`, `full.log`, `full.xml`, `build.log`, `dist/`,
 `reviewer.log`, `reviewer.xml`, and `reviewer/sweep.json` with timing results.
 
