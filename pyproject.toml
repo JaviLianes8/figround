@@ -30,9 +30,9 @@ dev = ["ruff", "mypy", "pytest", "pytest-timeout", "build", "twine"]
 
 [project.urls]
 Homepage = "https://lianes8studio.com"
-Source = "https://github.com/JaviLianes8/figround"
-Issues = "https://github.com/JaviLianes8/figround/issues"
-Changelog = "https://github.com/JaviLianes8/figround/blob/main/CHANGELOG.md"
+Source = "https://github.com/JaviLianes8/sigfigs"
+Issues = "https://github.com/JaviLianes8/sigfigs/issues"
+Changelog = "https://github.com/JaviLianes8/sigfigs/blob/main/CHANGELOG.md"
 LinkedIn = "https://www.linkedin.com/in/jlianes/"
 Funding = "https://buymeacoffee.com/jlianesglrs"
 
@@ -46,6 +46,7 @@ include = [
     "tests/*.py",
     "tests/upstream/MANIFEST.json",
     "scripts/fetch_upstream.py",
+    "scripts/check.ps1",
     "CHANGELOG.md",
     "GUIDE.md",
     "README.md",

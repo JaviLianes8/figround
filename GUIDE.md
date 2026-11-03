@@ -11,17 +11,22 @@ Rounding and formatting accept `int`, `float`, `str` or `Decimal`
 (`figround.Number`). Booleans and other types raise `TypeError`.
 
 - A `str` is parsed by `Decimal`, so `"1.20"`, `"-3e-4"` and `" 42 "` work.
-- A `float` is read through `repr(x)`, the shortest text that round-trips to the
+- A `float` is read through the base float `repr`, the shortest text that round-trips to the
   same float. `2.675` is therefore the decimal 2.675, not the binary value
   2.67499999999999982236431605997495353221893310546875 that the float stores.
   This is what you typed, and it is why `format_sig(2.675, 3)` is `"2.68"` while
   `format(2.675, ".3g")` is `"2.67"`. Pass `Decimal(x)` if you want the exact
-  binary value instead.
+  binary value instead. Subclasses use their stored float value, ignoring custom
+  representations and conversion methods.
+- An `int` is limited to 65536 bits in magnitude before Decimal conversion. Larger
+  integers raise `InvalidNumberError`; supply decimal text or a `Decimal` instead.
 - NaN, infinities and unparsable text raise `InvalidNumberError`.
 - Rounding accepts any text `Decimal` accepts, including `"1_000"`; counting
   (below) accepts only plain ASCII decimal text, since it reads the digits as written.
 
-Limits: `figures` is at most 10000 (`InvalidFiguresError` above it); a value whose
+Limits: `figures` is at most 10000 (`InvalidFiguresError` above it); integer subclasses
+used as figure counts are normalized to their stored integer before validation.
+A value whose
 exponent leaves the decimal range raises `InvalidNumberError`; fixed notation writes
 at most 10000 placeholder zeros and raises `InvalidNumberError` beyond that, so very
 large or small magnitudes need `notation="sci"`. `round_sig` returns a `float`, so a
@@ -167,6 +172,10 @@ units of one. In `sci` and `eng` notation both numbers share one exponent, taken
 from whichever of the two has the larger magnitude. The uncertainty must be
 positive (`UncertaintyError` otherwise).
 
+The rounded value may contain up to 100000 coefficient digits, including any
+rounding carry. Zero needs only one coefficient digit regardless of its original
+exponent or the uncertainty scale; fixed-format output limits still apply.
+
 ## Errors
 
 All value errors derive from `FigroundError`, which derives from `ValueError`, so
@@ -174,7 +183,7 @@ code written for 0.1.0 that catches `ValueError` keeps working.
 
 | error | raised when |
 | --- | --- |
-| `InvalidNumberError` | invalid or nonfinite input, exponent outside the decimal range, or too many fixed-notation zeros |
+| `InvalidNumberError` | invalid or nonfinite input, integer input above 65536 bits, exponent outside the decimal range, or too many fixed-notation zeros |
 | `InvalidFiguresError` | `figures` outside 1 to 10000 |
 | `InvalidOptionError` | unknown `rounding`, `notation` or `style`, or `sci=True` with another notation |
 | `AmbiguousFiguresError` | `count_sig(..., strict=True)` on ambiguous trailing zeros |

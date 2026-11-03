@@ -69,6 +69,11 @@ def test_wheel_metadata_and_contents() -> None:
         assert metadata["Version"] == "1.0.0"
         assert metadata["Requires-Python"] == ">=3.10"
         assert metadata["License-Expression"] == "MIT"
+        assert {
+            "Source, https://github.com/JaviLianes8/sigfigs",
+            "Issues, https://github.com/JaviLianes8/sigfigs/issues",
+            "Changelog, https://github.com/JaviLianes8/sigfigs/blob/main/CHANGELOG.md",
+        } <= set(metadata.get_all("Project-URL", []))
         assert "Development Status :: 5 - Production/Stable" in metadata.get_all("Classifier", [])
         assert all("extra == 'dev'" in value for value in metadata.get_all("Requires-Dist", []))
         entries = archive.read("figround-1.0.0.dist-info/entry_points.txt").decode()
@@ -81,6 +86,7 @@ def test_sdist_contents() -> None:
         assert {"LICENSE", "README.md", "GUIDE.md", "CHANGELOG.md", "pyproject.toml"} <= set(names)
         assert "src/figround/py.typed" in names
         assert "tests/upstream/MANIFEST.json" in names
+        assert "scripts/check.ps1" in names
         assert not any(name.endswith((".zip", ".pdf", ".pyc")) for name in names)
         assert not any("__pycache__" in name or "CERT-" in name for name in names)
         assert all(
@@ -95,6 +101,7 @@ def test_sdist_contents() -> None:
                 "PKG-INFO",
                 ".gitignore",
                 "scripts/fetch_upstream.py",
+                "scripts/check.ps1",
             }
             for name in names
         )
@@ -134,3 +141,15 @@ def test_installed_wheel_consumer_and_cli(tmp_path: Path) -> None:
         result = _run([*prefix, "--help"], tmp_path)
         assert result.returncode == 0
         assert "examples:" in result.stdout
+        with subprocess.Popen(
+            [*prefix, "round", "1", "2"],
+            cwd=tmp_path,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        ) as process:
+            assert process.stdout is not None and process.stderr is not None
+            process.stdout.close()
+            status = process.wait(timeout=30)
+            error = process.stderr.read()
+        assert (status, error) == (1, "")

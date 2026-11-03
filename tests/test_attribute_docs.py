@@ -13,6 +13,7 @@ import pytest
 @pytest.mark.parametrize(
     ("module_name", "names"),
     [
+        ("figround", {"__version__"}),
         ("figround._modes", {"Rounding", "Notation", "ROUNDING_MODES", "NOTATIONS"}),
         ("figround._round", {"Number"}),
         ("figround._uncertainty", {"Style", "STYLES"}),

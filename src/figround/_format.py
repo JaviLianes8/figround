@@ -14,7 +14,7 @@ def _resolve_notation(sci: bool, notation: str | None) -> str:
         return "sci" if sci else "fixed"
     check_notation(notation)
     if sci and notation != "sci":
-        raise InvalidOptionError(f"sci=True conflicts with notation={notation!r}")
+        raise InvalidOptionError("sci=True requires scientific notation")
     return notation
 
 

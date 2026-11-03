@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 import argparse
-import io
 import sys
 from collections.abc import Sequence
 from typing import cast
 
+from ._cli_output import write_lines
 from ._cli_text import COUNT_EPILOG, FORMAT_EPILOG, MAIN_EPILOG, ROUND_EPILOG
 from ._count import count_sig, sig_bounds
 from ._errors import FigroundError
@@ -178,11 +178,4 @@ def main(argv: Sequence[str] | None = None) -> int:
     except (FigroundError, ArithmeticError) as error:
         print(f"figround: error: {error}", file=sys.stderr)
         return 1
-    try:
-        for line in lines:
-            print(line)
-        sys.stdout.flush()
-    except BrokenPipeError:
-        sys.stdout = io.StringIO()
-        return 1
-    return 0
+    return write_lines(lines)

@@ -30,6 +30,11 @@ from ._round import Number, round_decimal, round_sig
 from ._uncertainty import STYLES, Style, format_uncertainty, round_uncertainty
 
 __version__ = "1.0.0"
+"""The public package version.
+
+>>> __version__
+'1.0.0'
+"""
 
 __all__ = [
     "NOTATIONS",

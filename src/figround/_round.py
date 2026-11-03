@@ -18,6 +18,7 @@ from ._modes import Rounding, decimal_mode
 
 MAX_FIGURES = 10_000
 """Largest accepted count of significant figures; larger counts raise InvalidFiguresError."""
+_MAX_INTEGER_BITS = 65_536
 
 Number = int | float | str | Decimal
 """Accepted numeric input. Floats use their shortest round-trip text.
@@ -35,9 +36,11 @@ def to_decimal(x: Number) -> Decimal:
     if isinstance(x, Decimal):
         value = x
     elif isinstance(x, int):
+        if int.bit_length(x) > _MAX_INTEGER_BITS:
+            raise InvalidNumberError("integer input exceeds 65536 bits; use str or Decimal")
         value = Decimal(x)
     elif isinstance(x, float):
-        value = Decimal(repr(x))
+        value = Decimal(float.__repr__(x), context=exact_context(28, "ROUND_HALF_EVEN"))
     elif isinstance(x, str):
         try:
             value = Decimal(x.strip(), context=exact_context(28, "ROUND_HALF_EVEN"))
@@ -50,12 +53,14 @@ def to_decimal(x: Number) -> Decimal:
     return value
 
 
-def check_figures(figures: int, name: str = "figures") -> None:
+def check_figures(figures: int, name: str = "figures") -> int:
     """Reject a figures count that is not an int from 1 to ``MAX_FIGURES``."""
     if isinstance(figures, bool) or not isinstance(figures, int):
         raise TypeError(f"{name} must be an int")
+    figures = int.__int__(figures)
     if not 1 <= figures <= MAX_FIGURES:
         raise InvalidFiguresError(f"{name} must be from 1 to {MAX_FIGURES}")
+    return figures
 
 
 def exact_context(digits: int, rounding: str) -> Context:
@@ -108,17 +113,20 @@ def round_decimal(x: Number, figures: int, *, rounding: Rounding = "half_even") 
     Decimal('3')
 
     ``rounding`` is one of ``ROUNDING_MODES``; the default ``"half_even"`` is the rule of
-    NIST SP 811 B.7.1 and the IEEE 754 default. Floats are read through ``repr`` (so
-    ``2.675`` is the decimal 2.675, not its binary neighbour).
+    NIST SP 811 B.7.1 and the IEEE 754 default. Floats use the base float ``repr``
+    (so ``2.675`` is decimal 2.675, not its binary neighbour). Integer inputs are
+    limited to 65536 bits; pass larger values as decimal text or Decimal.
+    Integer subclasses used as ``figures`` are read as their underlying integer.
 
     Raises:
         TypeError: ``x``, ``figures`` or ``rounding`` has an unsupported type.
         InvalidNumberError: ``x`` is unparsable text, NaN, infinite, or so large or
-            small that its exponent leaves the decimal range.
+            small that its exponent leaves the decimal range, or an integer input
+            exceeds 65536 bits.
         InvalidFiguresError: ``figures`` is below one or above ``MAX_FIGURES``.
         InvalidOptionError: ``rounding`` is not a known mode.
     """
-    check_figures(figures)
+    figures = check_figures(figures)
     mode = decimal_mode(rounding)
     return round_value(to_decimal(x), figures, mode)
 

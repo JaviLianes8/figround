@@ -23,6 +23,21 @@ All notable changes to this project are documented here. The format follows
   Closed output pipes return exit 1 without a traceback.
 - Publish Python 3.10 to 3.14 classifiers and Production/Stable metadata; include
   runnable API examples, contract tests, reference vectors and wheel validation.
+- Accept uncertainty results with exactly 100000 coefficient digits, while rejecting
+  a rounding carry beyond that limit. Zero precision no longer depends on its stored
+  exponent or the uncertainty scale.
+- Limit integer numeric inputs to 65536 bits before Decimal conversion to bound its
+  cost; larger integers raise `InvalidNumberError`. Use decimal text or `Decimal`
+  for larger values.
+- Read float subclasses through the base float representation in an isolated context;
+  normalize integer figure-count subclasses before validation and arithmetic.
+- Notation conflict errors use a bounded message without rendering the supplied option.
+- Handle Windows closed-pipe errors during writes and flushes, preventing a second
+  failing flush during shutdown. Other output errors still propagate.
+- Restore repository links, historical release names and runnable version metadata
+  documentation; include `scripts/check.ps1` in the source archive.
+- Add regression contracts for float underflow signs, Decimal zero counts, separate
+  value and uncertainty rounding modes, positive uncertainty-result zero and limits.
 
 ## [0.2.1] - 2026-10-13
 
@@ -44,8 +59,8 @@ All notable changes to this project are documented here. The format follows
 - Add `notation=` (`fixed`, `sci`, `eng`) and `trailing_point=` to `format_sig`.
 - Add `round_uncertainty` and `format_uncertainty` for values with a standard
   uncertainty, in the `1.234(5)` and `1.234 +/- 0.005` forms of JCGM 100:2008.
-- Add typed errors under `FigroundError`; all remain `ValueError` subclasses.
-- Add the `figround` command (`round`, `count`, `format`) and `python -m figround`.
+- Add typed errors under `SigFigsError`; all remain `ValueError` subclasses.
+- Add the `sigfigs` command (`round`, `count`, `format`) and `python -m sigfigs`.
 - Read floats through `repr` (unchanged results; `str` and `repr` agree for floats).
 - Add `GUIDE.md`.
 

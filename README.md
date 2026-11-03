@@ -37,6 +37,7 @@ format_uncertainty(100.02147, 0.00035, style="pm")   # "100.02147 +/- 0.00035"
 ```
 
 Rounding and formatting accept an `int`, `float`, `str` or `Decimal`.
+Integer inputs are limited to 65536 bits; use decimal text or `Decimal` for larger values.
 Counting accepts only `str` or `Decimal`, which can record trailing zeros. Values are converted
 through `decimal.Decimal` so the rounding matches the decimal digits you see rather
 than the binary approximation: a float is read through `repr`, so
@@ -58,7 +59,7 @@ figround count 0.00120 1200 1200.         # 3, 2, 4
 figround format 100.02147 -u 0.00035      # 100.02147(35)
 ```
 
-See [GUIDE](https://github.com/JaviLianes8/figround/blob/main/GUIDE.md) for every rule, the command options, the cited sources and
+See [GUIDE](https://github.com/JaviLianes8/sigfigs/blob/main/GUIDE.md) for every rule, the command options, the cited sources and
 how the results differ from `format(x, ".{n}g")`.
 
 ## Why
@@ -79,12 +80,12 @@ it cannot recover precision that was lost before a number became a float.
 Requires Python 3.10 or newer. Install `.[dev]`, then run `scripts/check.ps1`.
 `python scripts/fetch_upstream.py` fetches the optional decimal reference archive;
 set `FIGROUND_UPSTREAM_DIR` to store it outside the checkout. Tests skip that archive
-when it is absent. See the [CHANGELOG](https://github.com/JaviLianes8/figround/blob/main/CHANGELOG.md)
+when it is absent. See the [CHANGELOG](https://github.com/JaviLianes8/sigfigs/blob/main/CHANGELOG.md)
 for release changes.
 
 ## License
 
-MIT. See [LICENSE](https://github.com/JaviLianes8/figround/blob/main/LICENSE).
+MIT. See [LICENSE](https://github.com/JaviLianes8/sigfigs/blob/main/LICENSE).
 
 ## Links
 

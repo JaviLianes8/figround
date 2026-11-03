@@ -56,7 +56,7 @@ def round_uncertainty(
         TypeError, InvalidNumberError, InvalidFiguresError, InvalidOptionError: as in
             ``round_decimal``.
     """
-    check_figures(figures)
+    figures = check_figures(figures)
     value_mode = decimal_mode(rounding)
     unc_mode = decimal_mode(rounding if uncertainty_rounding is None else uncertainty_rounding)
     number, spread = to_decimal(value), to_decimal(uncertainty)
@@ -65,14 +65,17 @@ def round_uncertainty(
     spread = round_value(spread, figures, unc_mode)
     place = spread.as_tuple().exponent
     assert isinstance(place, int)
-    digits = max(number.adjusted() - place + 2, 1)
+    digits = 1 if number.is_zero() else max(number.adjusted() - place + 1, 1)
     if digits > _MAX_DIGITS:
         raise UncertaintyError("the value needs more than 100000 digits at this uncertainty")
-    ctx = exact_context(digits, value_mode)
+    # Allow a carry during rounding, then enforce the limit on the actual result.
+    ctx = exact_context(digits + 1, value_mode)
     try:
         rounded = number.quantize(Decimal(1).scaleb(place, ctx), context=ctx)
     except DecimalException:
         raise out_of_range() from None
+    if len(rounded.as_tuple().digits) > _MAX_DIGITS:
+        raise UncertaintyError("the value needs more than 100000 digits at this uncertainty")
     return (rounded.copy_abs() if rounded.is_zero() else rounded), spread
 
 
