@@ -32,6 +32,11 @@ All notable changes to this project are documented here. The format follows
 - Read float subclasses through the base float representation in an isolated context;
   normalize integer figure-count subclasses before validation and arithmetic.
 - Notation conflict errors use a bounded message without rendering the supplied option.
+- Parse numeric string subclasses from their stored text without invoking overridden
+  stripping or conversion methods, preventing integer substitution and raw exceptions.
+- Normalize notation string subclasses to their stored text before validation,
+  conflict checks and rendering in both formatting functions. Overridden comparisons
+  and conversions no longer affect results or escape the documented error types.
 - Handle Windows closed-pipe errors during writes and flushes, preventing a second
   failing flush during shutdown. Other output errors still propagate.
 - Restore repository links, historical release names and runnable version metadata

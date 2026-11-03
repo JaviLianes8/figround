@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import decimal
-from typing import Literal, get_args
+from typing import Literal, cast, get_args
 
 from ._errors import InvalidOptionError
 
@@ -57,10 +57,12 @@ def decimal_mode(rounding: str) -> str:
         raise InvalidOptionError(f"unknown rounding; use one of {choices}") from None
 
 
-def check_notation(notation: str) -> None:
-    """Reject a notation name that is not one of ``NOTATIONS``."""
+def check_notation(notation: str) -> Notation:
+    """Normalize stored notation text and reject names outside ``NOTATIONS``."""
     if not isinstance(notation, str):
         raise TypeError("notation must be a str")
+    notation = str.__str__(notation)
     if notation not in NOTATIONS:
         choices = ", ".join(NOTATIONS)
         raise InvalidOptionError(f"unknown notation; use one of {choices}")
+    return cast(Notation, notation)

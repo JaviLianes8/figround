@@ -43,7 +43,7 @@ def to_decimal(x: Number) -> Decimal:
         value = Decimal(float.__repr__(x), context=exact_context(28, "ROUND_HALF_EVEN"))
     elif isinstance(x, str):
         try:
-            value = Decimal(x.strip(), context=exact_context(28, "ROUND_HALF_EVEN"))
+            value = Decimal(str.strip(x), context=exact_context(28, "ROUND_HALF_EVEN"))
         except DecimalException:
             raise InvalidNumberError("not a number") from None
     else:
@@ -117,6 +117,7 @@ def round_decimal(x: Number, figures: int, *, rounding: Rounding = "half_even") 
     (so ``2.675`` is decimal 2.675, not its binary neighbour). Integer inputs are
     limited to 65536 bits; pass larger values as decimal text or Decimal.
     Integer subclasses used as ``figures`` are read as their underlying integer.
+    String subclasses are parsed from their stored text, ignoring overridden methods.
 
     Raises:
         TypeError: ``x``, ``figures`` or ``rounding`` has an unsupported type.

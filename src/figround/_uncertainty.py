@@ -129,7 +129,7 @@ def format_uncertainty(
     if not isinstance(pm, str):
         raise TypeError("pm must be a str")
     _check_style(style)
-    check_notation(notation)
+    notation = check_notation(notation)
     number, spread = round_uncertainty(
         value,
         uncertainty,
