@@ -147,6 +147,51 @@ historical evidence, not a rerun of the corrected code on those interpreters.
 
 None.
 
+## QA lenses, round 2
+
+Reviewed head: `907311825ebd69ae24cd8c893b7b624b80a0bfec`.
+Fix commit: `b33008903399896b3ccfe09c677b647b1a145848`
+(`read numeric and notation subclasses from stored text`).
+Date: 2026-11-03. Both reported findings are accepted and addressed.
+Independent confirmation by the adversarial lens remains pending; rerunning its
+checks here does not constitute a new independent PASS verdict.
+
+| Finding | Change and verification |
+| --- | --- |
+| C-07 | Use `str.strip(x)` for numeric string inputs. Subclasses cannot substitute oversized integers or raise through overridden stripping/conversion methods. Contracts cover 32000- and 128000-digit substitutions, whitespace, malformed text, NaN, and unchanged caller flags/traps. |
+| C-08 | Normalize notation to its stored base string before validation and retain that normalized value through conflict checks and rendering in both formatting functions. Contracts cover overridden equality, inequality and string conversion, all three valid notations, scientific compatibility, and bounded typed errors for conflicts and unknown names. |
+
+### Regression evidence and validation
+
+All 14 new hand-written cases in `tests/test_string_subclasses.py` failed on the
+reviewed code before implementation changes, then passed after the fixes.
+Public signatures and accepted input types remain unchanged; the CHANGELOG records
+the stored-string behaviour for numeric inputs and notation options.
+
+Copied the reviewer's six original regression tests and 40 probe cases into this
+round's scratch directory and ran them against the corrected source: **46 passed**.
+The 32000- and 128000-digit integer-substitution probes both return `Decimal('1.25')`.
+Their median conversion times, excluding integer construction, are 9.40 and 9.60
+microseconds (1.02x for 4x the unused integer size). Contracts assert stored-value
+semantics without machine-dependent timing thresholds.
+
+On local CPython 3.14.6, all four required gates exit 0: `ruff format --check .`,
+`ruff check .`, `mypy --strict src`, and pytest. The additional
+`mypy --strict src tests` check passes for 36 files. The final suite passes
+**309 tests, no skips**, including reference vectors, doctests, rebuilt artifact
+checks, an installed-wheel consumer and both CLI entry points. The rebuilt wheel
+and sdist pass `twine check --strict`. All Python source/test files remain at most
+200 lines. Every pytest invocation uses a 300-second timeout and scratch basetemp.
+The earlier interpreter matrix is historical evidence, not a rerun for this round.
+
+Evidence: `C:/lianes8-build/codex-pylib/scratch/sigfigs-cert/fix-r2/`, containing
+`red.log`, `green.log`, `full.log`, `full.xml`, `build.log`, `dist/`,
+`reviewer.log`, `reviewer.xml`, and `reviewer/sweep.json` with timing results.
+
+### Disputed findings
+
+None.
+
 ## Remaining certification stages
 
 Item 16 and the five lens confirmations under item 19 remain pending. Earlier
@@ -260,8 +305,8 @@ All 13 package source files stay below 200 lines.
 | 12 | PASS | Dated 1.0.0 section, 2026-11-03 |
 | 13 | PASS | Version 1.0.0, Production/Stable, Python classifiers, MIT, project URLs, no runtime dependencies |
 | 14 | PASS | Inspected sdist and wheel; package, type marker and license included; external archive excluded |
-| 15 | PASS | Four gates exit 0; round-1 fixed suite 295 passed |
+| 15 | PASS | Four gates exit 0; round-2 fixed suite 309 passed |
 | 16 | PENDING | Independent release reviewer has not evaluated this version |
 | 17 | READY | PR #4 from `release/1.0.0` to `main`, guard CLEAN; merge and publication pending |
 | 18 | PASS | 24 preparation mutations caught; five round-1 survivors now caught by added contracts |
-| 19 | PENDING | Five initial FAIL verdicts; all round-1 findings addressed, awaiting independent confirmation |
+| 19 | PENDING | All round-1 and round-2 findings addressed, awaiting independent confirmation |
