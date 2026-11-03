@@ -1,9 +1,9 @@
-# Improvement round: sigfigs 0.2.0
+# Improvement round: figround 0.2.0
 
 Progress:
 - [x] 1. Brainstorm ranked improvements (this file)
-- [x] 2. Implement on `improve/sigfigs-round` (additive API, minor bump to 0.2.0)
-- [x] 3. CLI (`sigfigs round|count|format`, `[project.scripts]`)
+- [x] 2. Implement on `improve/figround-round` (additive API, minor bump to 0.2.0)
+- [x] 3. CLI (`figround round|count|format`, `[project.scripts]`)
 - [x] 4. Gates: `ruff format --check .`, `ruff check .`, `mypy --strict src`, `pytest`
 - [x] 5. Contracts from cited sources, seeded oracle cross-check, real wheel e2e
 - [x] 6. Pull request opened
@@ -48,10 +48,10 @@ Progress:
    decimal place, `"100.02147(35)"` (GUM 7.2.2 form 2) or `"100.02147 +/- 0.00035"`
    (form 4), fixed, scientific or engineering with a shared exponent; separate
    rounding mode for the uncertainty since GUM 7.2.6 allows rounding up.
-6. **Typed errors.** `SigFigsError(ValueError)` with `InvalidNumberError`,
+6. **Typed errors.** `FigroundError(ValueError)` with `InvalidNumberError`,
    `InvalidFiguresError`, `InvalidOptionError`, `AmbiguousFiguresError`,
    `UncertaintyError`; all still `ValueError`, so 0.1.0 callers keep working.
-7. **CLI.** `sigfigs round`, `sigfigs count`, `sigfigs format` (with `--uncertainty`),
+7. **CLI.** `figround round`, `figround count`, `figround format` (with `--uncertainty`),
    runnable examples in `--help`, errors to stderr with exit status 1.
 8. **Docs.** Docstrings with examples on every public name, `GUIDE.md` covering float
    input via `repr`, the zero convention, and where `format(x, ".{n}g")` differs.

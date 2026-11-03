@@ -6,13 +6,14 @@ import re
 from decimal import Decimal
 
 from ._errors import AmbiguousFiguresError, InvalidNumberError
+from ._validation import check_bool
 
 _NUMBER = re.compile(r"[+-]?(?P<int>[0-9]*)(?:(?P<point>\.)(?P<frac>[0-9]*))?(?:[eE][+-]?[0-9]+)?")
 
 
 def _decimal_bounds(value: Decimal) -> tuple[int, int]:
     if not value.is_finite():
-        raise InvalidNumberError(f"not a finite number: {value!r}")
+        raise InvalidNumberError("not a finite number")
     _sign, digits, exponent = value.as_tuple()
     assert isinstance(exponent, int)
     count = 1 + max(0, -exponent) if value.is_zero() else len(digits)
@@ -46,10 +47,10 @@ def sig_bounds(text: str | Decimal) -> tuple[int, int]:
     if isinstance(text, Decimal):
         return _decimal_bounds(text)
     if not isinstance(text, str):
-        raise TypeError(f"expected str or Decimal, got {type(text).__name__}")
+        raise TypeError("expected str or Decimal")
     match = _NUMBER.fullmatch(text.strip())
     if match is None or not (match["int"] or match["frac"]):
-        raise InvalidNumberError(f"not a number: {text!r}")
+        raise InvalidNumberError("not a number")
     whole, frac = match["int"], match["frac"] or ""
     significant = (whole + frac).lstrip("0")
     if not significant:
@@ -74,10 +75,11 @@ def count_sig(text: str | Decimal, *, strict: bool = False) -> int:
     reading; pass ``strict=True`` to raise ``AmbiguousFiguresError`` instead, or call
     ``sig_bounds`` for both readings. The rules are those of ``sig_bounds``.
     """
+    check_bool(strict, "strict")
     low, high = sig_bounds(text)
     if strict and low != high:
         raise AmbiguousFiguresError(
-            f"{text!r} has {low} to {high} significant figures; "
+            f"ambiguous count: {low} to {high} significant figures; "
             "add a decimal point or use scientific notation"
         )
     return low

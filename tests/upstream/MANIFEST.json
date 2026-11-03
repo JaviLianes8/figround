@@ -3,7 +3,7 @@
     "title": "General Decimal Arithmetic testcases (the tests read rounding.decTest, version 2.62)",
     "url": "https://speleotrove.com/decimal/dectest.zip",
     "revision": "archive Last-Modified 2010-10-18, ETag c14b5-492de7c7ffc00; rounding.decTest version 2.62",
-    "fetched": "2026-10-13",
+    "fetched": "2026-11-03",
     "size": 791733,
     "sha256": "b70a224cd52e82b7a8150aedac5efa2d0cb3941696fd829bdbe674f9f65c3926",
     "licence": "ICU licence per speleotrove.com; file headers: (c) Mike Cowlishaw and IBM, all rights reserved"

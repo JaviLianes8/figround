@@ -1,4 +1,4 @@
-"""Allow ``python -m sigfigs``."""
+"""Allow ``python -m figround``."""
 
 from __future__ import annotations
 

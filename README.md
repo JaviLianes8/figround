@@ -1,17 +1,19 @@
-# sigfigs
+# figround
+
+[![Lianes8 Certified](https://lianes8studio.com/certified/lianes8-certified-badge.svg)](https://lianes8studio.com/certified)
 
 Significant-figures rounding and formatting with exact Decimal math and preserved trailing zeros
 
 ## Install
 
 ```
-pip install sigfigs
+pip install figround
 ```
 
 ## Usage
 
 ```python
-from sigfigs import (
+from figround import (
     count_sig, format_sig, format_uncertainty, round_decimal, round_sig, sig_bounds,
 )
 
@@ -34,7 +36,8 @@ format_uncertainty(100.02147, 0.00035)               # "100.02147(35)"
 format_uncertainty(100.02147, 0.00035, style="pm")   # "100.02147 +/- 0.00035"
 ```
 
-All functions accept an `int`, `float`, `str` or `Decimal`. Values are converted
+Rounding and formatting accept an `int`, `float`, `str` or `Decimal`.
+Counting accepts only `str` or `Decimal`, which can record trailing zeros. Values are converted
 through `decimal.Decimal` so the rounding matches the decimal digits you see rather
 than the binary approximation: a float is read through `repr`, so
 `round_sig(2.675, 3)` is `2.68`, not `2.67`. Rounding is half to even by default
@@ -43,37 +46,45 @@ available. Values with an uncertainty follow the GUM (JCGM 100:2008, clause 7.2)
 the uncertainty keeps two significant figures and the value is rounded to match.
 
 Errors are typed (`InvalidNumberError`, `InvalidFiguresError`, `InvalidOptionError`,
-`AmbiguousFiguresError`, `UncertaintyError`), all subclasses of `SigFigsError` and
+`AmbiguousFiguresError`, `UncertaintyError`), all subclasses of `FigroundError` and
 of `ValueError`.
 
 ## Command line
 
 ```
-sigfigs round 2.675 3                    # 2.68
-sigfigs round 123456 2 --notation sci    # 1.2e+05
-sigfigs count 0.00120 1200 1200.         # 3, 2, 4
-sigfigs format 100.02147 -u 0.00035      # 100.02147(35)
+figround round 2.675 3                    # 2.68
+figround round 123456 2 --notation sci    # 1.2e+05
+figround count 0.00120 1200 1200.         # 3, 2, 4
+figround format 100.02147 -u 0.00035      # 100.02147(35)
 ```
 
-See [GUIDE.md](GUIDE.md) for every rule, the command options, the cited sources and
+See [GUIDE](https://github.com/JaviLianes8/figround/blob/main/GUIDE.md) for every rule, the command options, the cited sources and
 how the results differ from `format(x, ".{n}g")`.
 
 ## Why
 
-The standard library rounds to decimal places, not to significant figures, and
-`round` operates on binary floats, so `round(2.675, 2)` gives `2.67`. Formatting
-to a fixed number of significant figures while keeping trailing zeros, across
-zero, negatives and very large or small magnitudes, takes fiddly string work
-every time.
+Python's built-in `format(x, ".3g")` already rounds to significant figures.
+Use it when its choice of notation and handling of trailing zeros fit your output.
+`Decimal.quantize` is a good choice when you know the decimal place to round to.
 
-The one option with real traction, `sigfig`, is a single module of several
-hundred lines covering uncertainty, ranges and more, and it ships no `py.typed`.
-`sigfigs` is the small, dependency-free, fully typed take: exact Decimal math,
-source-checked rules, `mypy --strict` clean.
+`figround` combines explicit fixed, scientific and engineering notation, eight
+rounding modes, preserved trailing zeros, and value-with-uncertainty formatting.
+It reads floats through `repr`, so `format_sig(2.675, 3)` gives `"2.68"` while
+`format(2.675, ".3g")` gives `"2.67"`. It has no runtime dependencies and ships
+Python type information. Counting follows the documented written-number convention;
+it cannot recover precision that was lost before a number became a float.
+
+## Development
+
+Requires Python 3.10 or newer. Install `.[dev]`, then run `scripts/check.ps1`.
+`python scripts/fetch_upstream.py` fetches the optional decimal reference archive;
+set `FIGROUND_UPSTREAM_DIR` to store it outside the checkout. Tests skip that archive
+when it is absent. See the [CHANGELOG](https://github.com/JaviLianes8/figround/blob/main/CHANGELOG.md)
+for release changes.
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+MIT. See [LICENSE](https://github.com/JaviLianes8/figround/blob/main/LICENSE).
 
 ## Links
 

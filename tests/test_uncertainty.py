@@ -5,7 +5,7 @@ from decimal import Decimal
 
 import pytest
 
-from sigfigs import (
+from figround import (
     InvalidFiguresError,
     InvalidNumberError,
     InvalidOptionError,

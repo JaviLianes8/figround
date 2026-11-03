@@ -2,7 +2,16 @@
 
 from __future__ import annotations
 
-from decimal import MAX_EMAX, MIN_EMIN, Context, Decimal, DecimalException, Underflow
+from decimal import (
+    MAX_EMAX,
+    MIN_EMIN,
+    Context,
+    Decimal,
+    DecimalException,
+    InvalidOperation,
+    Overflow,
+    Underflow,
+)
 
 from ._errors import InvalidFiguresError, InvalidNumberError
 from ._modes import Rounding, decimal_mode
@@ -26,13 +35,13 @@ def to_decimal(x: Number) -> Decimal:
         value = Decimal(repr(x))
     elif isinstance(x, str):
         try:
-            value = Decimal(x.strip())
-        except DecimalException as error:
-            raise InvalidNumberError(f"not a number: {x!r}") from error
+            value = Decimal(x.strip(), context=exact_context(28, "ROUND_HALF_EVEN"))
+        except DecimalException:
+            raise InvalidNumberError("not a number") from None
     else:
-        raise TypeError(f"unsupported type: {type(x).__name__}")
+        raise TypeError("expected int, float, str or Decimal")
     if not value.is_finite():
-        raise InvalidNumberError(f"not a finite number: {x!r}")
+        raise InvalidNumberError("not a finite number")
     return value
 
 
@@ -41,19 +50,26 @@ def check_figures(figures: int, name: str = "figures") -> None:
     if isinstance(figures, bool) or not isinstance(figures, int):
         raise TypeError(f"{name} must be an int")
     if not 1 <= figures <= MAX_FIGURES:
-        raise InvalidFiguresError(f"{name} must be from 1 to {MAX_FIGURES}, got {figures}")
+        raise InvalidFiguresError(f"{name} must be from 1 to {MAX_FIGURES}")
 
 
 def exact_context(digits: int, rounding: str) -> Context:
     """A context that traps overflow, underflow and invalid operations."""
-    ctx = Context(prec=digits, rounding=rounding, Emax=MAX_EMAX, Emin=MIN_EMIN)
-    ctx.traps[Underflow] = True
-    return ctx
+    return Context(
+        prec=digits,
+        rounding=rounding,
+        Emax=MAX_EMAX,
+        Emin=MIN_EMIN,
+        capitals=1,
+        clamp=0,
+        flags=[],
+        traps=[InvalidOperation, Overflow, Underflow],
+    )
 
 
-def out_of_range(x: object) -> InvalidNumberError:
+def out_of_range() -> InvalidNumberError:
     """The error for a value whose exponent leaves the representable decimal range."""
-    return InvalidNumberError(f"exponent out of range: {x!r}")
+    return InvalidNumberError("exponent out of range")
 
 
 def round_value(value: Decimal, figures: int, rounding: str) -> Decimal:
@@ -71,7 +87,7 @@ def round_value(value: Decimal, figures: int, rounding: str) -> Decimal:
         quantum = Decimal(1).scaleb(rounded.adjusted() - figures + 1, ctx)
         return rounded.quantize(quantum, context=ctx)
     except DecimalException:
-        raise out_of_range(value) from None
+        raise out_of_range() from None
 
 
 def round_decimal(x: Number, figures: int, *, rounding: Rounding = "half_even") -> Decimal:

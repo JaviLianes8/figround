@@ -30,15 +30,19 @@ _DECIMAL_MODES = {
 
 def decimal_mode(rounding: str) -> str:
     """Map a public rounding name to the ``decimal`` constant, rejecting unknown names."""
+    if not isinstance(rounding, str):
+        raise TypeError("rounding must be a str")
     try:
         return _DECIMAL_MODES[rounding]
     except (KeyError, TypeError):
         choices = ", ".join(ROUNDING_MODES)
-        raise InvalidOptionError(f"unknown rounding {rounding!r}; use one of {choices}") from None
+        raise InvalidOptionError(f"unknown rounding; use one of {choices}") from None
 
 
 def check_notation(notation: str) -> None:
     """Reject a notation name that is not one of ``NOTATIONS``."""
+    if not isinstance(notation, str):
+        raise TypeError("notation must be a str")
     if notation not in NOTATIONS:
         choices = ", ".join(NOTATIONS)
-        raise InvalidOptionError(f"unknown notation {notation!r}; use one of {choices}")
+        raise InvalidOptionError(f"unknown notation; use one of {choices}")

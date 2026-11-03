@@ -1,14 +1,14 @@
-"""Typed errors: each is a SigFigsError and still a ValueError, as in 0.1.0."""
+"""Typed errors: each is a FigroundError and still a ValueError, as in 0.1.0."""
 
 import pytest
 
-import sigfigs
-from sigfigs import (
+import figround
+from figround import (
     AmbiguousFiguresError,
+    FigroundError,
     InvalidFiguresError,
     InvalidNumberError,
     InvalidOptionError,
-    SigFigsError,
     UncertaintyError,
     format_sig,
     round_decimal,
@@ -26,7 +26,7 @@ ERRORS = [
 
 @pytest.mark.parametrize("error", ERRORS)
 def test_hierarchy(error: type[Exception]) -> None:
-    assert issubclass(error, SigFigsError)
+    assert issubclass(error, FigroundError)
     assert issubclass(error, ValueError)
 
 
@@ -69,7 +69,7 @@ def test_0_1_0_callers_catching_value_error_still_work() -> None:
 
 def test_errors_are_exported() -> None:
     for error in ERRORS:
-        assert getattr(sigfigs, error.__name__) is error
+        assert getattr(figround, error.__name__) is error
 
 
 @pytest.mark.parametrize(
@@ -100,7 +100,7 @@ def test_figures_have_an_upper_bound() -> None:
 
 
 def test_uncertainty_far_below_the_value_is_rejected() -> None:
-    from sigfigs import round_uncertainty
+    from figround import round_uncertainty
 
     with pytest.raises(UncertaintyError):
         round_uncertainty("1e999999999999999999", "1e-999999999999999999")

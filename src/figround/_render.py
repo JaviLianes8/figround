@@ -25,7 +25,7 @@ def fixed(value: Decimal, *, trailing_point: bool = False) -> str:
     """
     sign, text, exponent = _parts(value)
     if exponent > FIXED_LIMIT or -exponent - len(text) > FIXED_LIMIT:
-        raise InvalidNumberError(f"{value} needs too many zeros for fixed notation; use 'sci'")
+        raise InvalidNumberError("too many zeros for fixed notation; use 'sci'")
     if exponent >= 0:
         body = text + "0" * exponent
         if trailing_point and exponent == 0 and body.endswith("0") and not value.is_zero():

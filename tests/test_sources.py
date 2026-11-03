@@ -1,4 +1,4 @@
-"""Golden vectors copied from the cited sources, as fetched on 2026-10-12.
+"""Golden vectors copied from the cited sources, rechecked against live sources on 2026-11-03.
 
 Every case names its source. The GUM writes a decimal comma and groups digits with
 spaces (``100,021 47``); those numbers are transcribed with a decimal point and no
@@ -9,7 +9,7 @@ from decimal import Decimal
 
 import pytest
 
-from sigfigs import format_sig, format_uncertainty, round_decimal, round_uncertainty
+from figround import format_sig, format_uncertainty, round_decimal, round_uncertainty
 
 # NIST SP 811 (2008), Appendix B.7.1 "Rounding numbers", rules 1 to 3 and their examples.
 # https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication811e2008.pdf

@@ -6,6 +6,7 @@ from ._errors import InvalidOptionError
 from ._modes import Notation, Rounding, check_notation
 from ._render import exponent_marker, fixed, power_for, shift
 from ._round import Number, round_decimal
+from ._validation import check_bool
 
 
 def _resolve_notation(sci: bool, notation: str | None) -> str:
@@ -50,6 +51,8 @@ def format_sig(
     Raises the errors of ``round_decimal``, plus ``InvalidOptionError`` for an unknown
     ``notation`` or one that conflicts with ``sci=True``.
     """
+    check_bool(sci, "sci")
+    check_bool(trailing_point, "trailing_point")
     chosen = _resolve_notation(sci, notation)
     rounded = round_decimal(x, figures, rounding=rounding)
     if chosen == "fixed":

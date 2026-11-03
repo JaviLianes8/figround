@@ -52,7 +52,7 @@ def round_uncertainty(
     unc_mode = decimal_mode(rounding if uncertainty_rounding is None else uncertainty_rounding)
     number, spread = to_decimal(value), to_decimal(uncertainty)
     if spread <= 0:
-        raise UncertaintyError(f"uncertainty must be positive, got {uncertainty!r}")
+        raise UncertaintyError("uncertainty must be positive")
     spread = round_value(spread, figures, unc_mode)
     place = spread.as_tuple().exponent
     assert isinstance(place, int)
@@ -63,13 +63,15 @@ def round_uncertainty(
     try:
         rounded = number.quantize(Decimal(1).scaleb(place, ctx), context=ctx)
     except DecimalException:
-        raise out_of_range(value) from None
+        raise out_of_range() from None
     return (rounded.copy_abs() if rounded.is_zero() else rounded), spread
 
 
 def _check_style(style: str) -> None:
+    if not isinstance(style, str):
+        raise TypeError("style must be a str")
     if style not in STYLES:
-        raise InvalidOptionError(f"unknown style {style!r}; use one of {', '.join(STYLES)}")
+        raise InvalidOptionError(f"unknown style; use one of {', '.join(STYLES)}")
 
 
 def _in_last_digits(value: Decimal, spread: Decimal) -> str:
@@ -111,6 +113,8 @@ def format_uncertainty(
     Raises the errors of ``round_uncertainty``, plus ``InvalidOptionError`` for an
     unknown ``style`` or ``notation``.
     """
+    if not isinstance(pm, str):
+        raise TypeError("pm must be a str")
     _check_style(style)
     check_notation(notation)
     number, spread = round_uncertainty(

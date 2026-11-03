@@ -1,17 +1,19 @@
-"""The ``sigfigs`` command: round, count and format numbers from the shell."""
+"""The ``figround`` command: round, count and format numbers from the shell."""
 
 from __future__ import annotations
 
 import argparse
+import io
 import sys
 from collections.abc import Sequence
 from typing import cast
 
 from ._cli_text import COUNT_EPILOG, FORMAT_EPILOG, MAIN_EPILOG, ROUND_EPILOG
 from ._count import count_sig, sig_bounds
-from ._errors import SigFigsError
+from ._errors import FigroundError
 from ._format import format_sig
 from ._modes import NOTATIONS, ROUNDING_MODES, Rounding
+from ._parser import Parser
 from ._uncertainty import STYLES, format_uncertainty
 
 
@@ -36,8 +38,8 @@ def _add_notation(parser: argparse.ArgumentParser) -> None:
 
 def _parser() -> argparse.ArgumentParser:
     raw = argparse.RawDescriptionHelpFormatter
-    parser = argparse.ArgumentParser(
-        prog="sigfigs",
+    parser = Parser(
+        prog="figround",
         description="Round, count and format significant figures with exact decimal math.",
         epilog=MAIN_EPILOG,
         formatter_class=raw,
@@ -173,9 +175,14 @@ def main(argv: Sequence[str] | None = None) -> int:
             lines = _count(args)
         else:
             lines = _format(args, parser)
-    except (SigFigsError, ArithmeticError) as error:
-        print(f"sigfigs: error: {error}", file=sys.stderr)
+    except (FigroundError, ArithmeticError) as error:
+        print(f"figround: error: {error}", file=sys.stderr)
         return 1
-    for line in lines:
-        print(line)
+    try:
+        for line in lines:
+            print(line)
+        sys.stdout.flush()
+    except BrokenPipeError:
+        sys.stdout = io.StringIO()
+        return 1
     return 0

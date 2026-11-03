@@ -13,7 +13,7 @@ it with `python scripts/fetch_upstream.py`; until then those tests skip.
 
 ## Before you open a pull request
 
-- Keep public API in `src/sigfigs/__init__.py`; internals live in `_`-prefixed modules.
+- Keep public API in `src/figround/__init__.py`; internals live in `_`-prefixed modules.
 - Add a test for the behaviour you change. Tests inject time, disk and network; they
   never touch the real thing.
 - Run `scripts/check.ps1` (format, lint, types, tests) and make sure it passes.

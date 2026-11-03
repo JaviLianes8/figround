@@ -4,7 +4,7 @@ from decimal import Decimal
 
 import pytest
 
-from sigfigs import AmbiguousFiguresError, InvalidNumberError, count_sig, sig_bounds
+from figround import AmbiguousFiguresError, InvalidNumberError, count_sig, sig_bounds
 
 
 @pytest.mark.parametrize(
@@ -70,7 +70,7 @@ def test_rejects_numbers_that_cannot_record_zeros(value: object) -> None:
 
 
 def test_round_trip_with_format() -> None:
-    from sigfigs import format_sig
+    from figround import format_sig
 
     for figures in range(1, 8):
         assert count_sig(format_sig("0.000123456789", figures)) == figures

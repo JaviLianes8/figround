@@ -4,7 +4,7 @@ The hand-written table runs always. The decTest vectors come from rounding.decTe
 inside https://speleotrove.com/decimal/dectest.zip, which is not committed:
 `python scripts/fetch_upstream.py` fetches it as pinned in tests/upstream/MANIFEST.json,
 and those tests skip until then. Each line "id add a b -> r" at precision 5 gives
-r = round(a + b, 5 digits, mode); the decTest mode names are the names sigfigs uses.
+r = round(a + b, 5 digits, mode); the decTest mode names are the names figround uses.
 """
 
 from __future__ import annotations
@@ -15,7 +15,7 @@ from decimal import Decimal, localcontext
 import pytest
 from conftest import upstream_path
 
-from sigfigs import format_sig, round_decimal
+from figround import format_sig, round_decimal
 
 MODES = ("down", "half_down", "half_even", "half_up", "up", "floor", "ceiling", "05up")
 INPUTS = ("12345.5", "12344.5", "-12345.5", "12345.1", "12340.1", "12345.01")
@@ -50,7 +50,7 @@ def _dectest_cases() -> list[tuple[str, str, str, str, str]]:
         line = raw.split("--", 1)[0].strip()
         if line.lower().startswith("rounding:"):
             mode = line.split(":", 1)[1].strip()
-        # rzex and r0ze test the sign of a zero result, which sigfigs does not promise.
+        # rzex and r0ze test the sign of a zero result, which figround does not promise.
         elif " add " in line and not line.startswith(("rzex", "r0ze")):
             ident, _, left, right, _, result, *_ = line.split()
             cases.append((ident, mode, left, right, result))
