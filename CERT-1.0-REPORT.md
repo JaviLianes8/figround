@@ -60,17 +60,98 @@ Availability is a point-in-time observation, not a reservation or upload guarant
 Set `FIGROUND_UPSTREAM_DIR` before `python scripts/fetch_upstream.py` to choose the
 reference archive directory. Without the archive, its two tests skip cleanly.
 
-## Baseline and current checks
+## Preparation checks before QA
 
 Before changes: 198 passed, two optional archive tests skipped; format, lint and
 `mypy --strict src tests` passed. The final source suite contains 249 tests including
 live archive tests, executable README/GUIDE blocks, attribute docstrings and module
 doctests, plus three artifact checks.
 
+## QA lenses, round 1
+
+Reviewed head: `671e7cb0d24e9d86356117ce7e84a4e2f82313b1`.
+Fix commit: `ea3a57aff56f2c53dffdfbae4213d33d1d0f02ae`
+(`fix certification regressions and strengthen contracts`).
+Date: 2026-11-03. All 21 reported findings are accepted and addressed.
+All five initial lens verdicts were FAIL; independent confirmation of these fixes
+remains pending. The fixes do not constitute new PASS verdicts for the lenses.
+
+| Findings | Change and verification |
+| --- | --- |
+| A001, D-01 | README and packaged metadata link to the existing `JaviLianes8/sigfigs` repository. Source, Issues, GUIDE, CHANGELOG and LICENSE URLs all returned HTTP 200; rebuilt wheel metadata is asserted. |
+| A002, B-R1-001, C-06, E-63 | Separate working carry precision from the 100000-digit result limit. Tests accept 99999 and 100000 coefficient digits, reject 100001, and distinguish rounding down at the boundary from a carry beyond it. |
+| A003 | Restore `SigFigsError`, `sigfigs` and `python -m sigfigs` in the 0.2.0 history. The rename remains documented in 1.0.0. |
+| A004 | Handle Windows EINVAL and broken output pipes during writes and flushes, replacing stdout before shutdown. Real subprocess tests pass for the module and installed executable; unrelated output errors still propagate. |
+| A005 | Add an attribute docstring and runnable example for `__version__`; include it in the attribute-documentation contract. |
+| B-R1-002, C-05 | Estimate zero's precision independently of its stored exponent and uncertainty scale. Signed and scaled zeros produce the same positive result; tiny uncertainty formats compactly in scientific notation. |
+| C-01 | Reject integer inputs above 65536 bits before Decimal conversion with `InvalidNumberError`; document decimal text and Decimal alternatives. Test both signs, the inclusive limit and overridden subclass bit lengths. Repeat the size-scaling probe with construction excluded. |
+| C-02 | Use the base float representation in an isolated decimal context. Subclass tests verify the numeric result and unchanged caller flags and traps under both InvalidOperation trap settings. |
+| C-03 | Use a constant notation-conflict message. A custom representation containing 1.4 million characters never appears in the bounded diagnostic. |
+| C-04 | Normalize figure-count subclasses to their stored base integer before validation and all arithmetic. Tests cover invalid counts, overridden comparisons, conversion and subtraction, and valid subclass counts. |
+| D-02 | Include `scripts/check.ps1` in the sdist. Assert its archive membership and execute the documented command from the extracted archive. |
+| E-10 | Assert float underflow signs and positive exact zero. |
+| E-25 | Assert Decimal zero counts for positive, zero and negative exponents through both counting functions and strict mode. |
+| E-37 | Assert acceptance at both 99999 and 100000 digits and rejection above the public limit. |
+| E-39 | Assert separate value and uncertainty modes using 2.41 and 0.11, producing 2.4 and 0.2. |
+| E-40 | Inspect Decimal zero signs after rounding negative values and negative zero. |
+
+### Regression evidence
+
+Before implementation changes, the added source contracts recorded 23 failures and
+23 passes, including the missing version documentation. The old sdist failed the
+script-membership assertion, and its installed CLI reproduced exit 120 and stderr.
+After the fixes, all 46 focused source checks pass. Expectations are hand-written
+contracts; the inclusive precision test also compares independent Decimal quantization.
+
+Each surviving mutation was reapplied separately to a scratch copy. All five now
+fail assertions. M39's replacement was adjusted only to account for the new carry
+headroom in the context-construction expression.
+
+| Mutation | Contract that catches it |
+| --- | --- |
+| M10 | `test_float_underflow_preserves_sign` |
+| M25 | `test_decimal_zero_count_uses_only_decimal_places` |
+| M37 | `test_uncertainty_accepts_inclusive_digit_limit` |
+| M39 | `test_uncertainty_rounding_does_not_override_value_rounding` |
+| M40 | `test_uncertainty_result_zero_is_positive` |
+
+The integer probe excluded input construction and used three timing windows per
+size. Inputs with 32000, 128000 and 512000 decimal digits were rejected in median
+2.99, 3.51 and 3.17 microseconds respectively. The first two sizes had previously
+required 0.0992 and 1.7524 seconds. The committed size-limit contract protects the
+bounded conversion policy without relying on machine-dependent test timing.
+
+### Validation
+
+On local CPython 3.14.6, each required gate exits 0: `ruff format --check .`,
+`ruff check .`, `mypy --strict src`, and pytest. The additional strict source/test
+type check passes for 35 files. The full suite passes **295 tests, no skips**,
+including reference data, doctests, the rebuilt wheel consumer and both CLI entry
+points. Per-test timeout is 300 seconds, with all temporary paths under the dedicated
+scratch directory. All source and test files remain at most 200 lines.
+
+Built the sdist and its wheel with `python -m build --no-isolation`; both pass
+`twine check --strict`. The extracted sdist's `scripts/check.ps1` also passes format,
+lint, strict source/test typing and all 295 tests. The pre-QA artifact identities
+below are superseded for this round by the artifacts under `fix-r1/dist`.
+
+Evidence is retained under
+`C:/lianes8-build/codex-pylib/scratch/sigfigs-cert/fix-r1/`:
+`red-corrected.log`, `red.log` (old-artifact failures), `full.log`, `full.xml`,
+`sdist-check.log`, `mutation-results.json`, each mutation's `result.log`,
+`timings.json`, `links.json` and `dist/`.
+This fix round ran only CPython 3.14.6; the earlier preparation matrix below is
+historical evidence, not a rerun of the corrected code on those interpreters.
+
+### Disputed findings
+
+None.
+
 ## Remaining certification stages
 
-Items 16 and 19 have not been evaluated for this release. Earlier improvement-round
-reviews do not certify 1.0.0. Item 17 merge and publication remain pending.
+Item 16 and the five lens confirmations under item 19 remain pending. Earlier
+improvement-round reviews do not certify 1.0.0. Item 17 merge and publication remain
+pending.
 
 ## Mutation round (item 18)
 
@@ -150,7 +231,7 @@ Artifact identities from the inspected build:
 - `figround-1.0.0-py3-none-any.whl`: SHA-256 `4330904b3b0b67c9734dedae99a9da05e3961a47bee3b08bbd44f629de271a39`.
 - `figround-1.0.0.tar.gz`: SHA-256 `b41e9f9e46e053d4c68f317f5f55a3a71809ac15a613a37a4b3e0a0412c04253`.
 
-## Final gates (item 15)
+## Preparation gates before QA (item 15)
 
 All four commands exited 0 independently: `ruff format --check .`, `ruff check .`,
 `mypy --strict src`, and `python -m pytest`. The additional `mypy --strict src tests`
@@ -167,7 +248,7 @@ All 13 package source files stay below 200 lines.
 | --- | --- | --- |
 | 1 | PASS | Twenty exports, stable names/signatures/defaults; all changes in CHANGELOG |
 | 2 | PASS | Exact `__all__`, no unlisted public attributes, public imports in docs |
-| 3 | PASS | Function/class doctests, seven alias/constant attribute docstrings, executable README/GUIDE blocks |
+| 3 | PASS | Function/class doctests, eight alias/constant/version attribute docstrings, executable README/GUIDE blocks |
 | 4 | PASS | Strict source/test typing and installed external consumer; `py.typed` shipped |
 | 5 | PASS | Typed failures, bounded messages, no reflected inputs, context isolation |
 | 6 | PASS | Every function, type alias, option tuple and exception has contracts |
@@ -179,8 +260,8 @@ All 13 package source files stay below 200 lines.
 | 12 | PASS | Dated 1.0.0 section, 2026-11-03 |
 | 13 | PASS | Version 1.0.0, Production/Stable, Python classifiers, MIT, project URLs, no runtime dependencies |
 | 14 | PASS | Inspected sdist and wheel; package, type marker and license included; external archive excluded |
-| 15 | PASS | Four gates exit 0; final suite 252 passed |
+| 15 | PASS | Four gates exit 0; round-1 fixed suite 295 passed |
 | 16 | PENDING | Independent release reviewer has not evaluated this version |
 | 17 | READY | PR #4 from `release/1.0.0` to `main`, guard CLEAN; merge and publication pending |
-| 18 | PASS | 24 deliberately broken variants caught; restored suite passes |
-| 19 | PENDING | No release QA lens verdicts yet |
+| 18 | PASS | 24 preparation mutations caught; five round-1 survivors now caught by added contracts |
+| 19 | PENDING | Five initial FAIL verdicts; all round-1 findings addressed, awaiting independent confirmation |
